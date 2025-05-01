@@ -1,0 +1,28 @@
+.cart-page {
+    padding: 40px;
+  }
+  .cart-item {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid #ccc;
+    padding: 20px 0;
+  }
+  .cart-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+  }
+  .cart-qty {
+    display: flex;
+    align-items: center;
+  }
+  .cart-qty input {
+    width: 40px;
+    text-align: center;
+  }
+  .checkout-btn {
+    padding: 10px 20px;
+    background: black;
+    color: white;
+  }
+  
