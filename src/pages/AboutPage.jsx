@@ -12,7 +12,7 @@ const AboutPage = () => {
       <p>
         Founded in 2020, we have been committed to sourcing the finest natural ingredients to create effective and safe health products.
       </p>
-      <h2>Our Vision</h2>
+      <h2>Our Vision...</h2>
       <p>
         To be a global leader in Ayurvedic health solutions, enhancing the well-being of individuals worldwide.
       </p>
