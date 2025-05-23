@@ -1,26 +1,26 @@
 {
   "files": {
-    "main.css": "/GCMT-website/static/css/main.3daef2f8.css",
-    "main.js": "/GCMT-website/static/js/main.4419794a.js",
-    "static/js/952.26b32017.chunk.js": "/GCMT-website/static/js/952.26b32017.chunk.js",
-    "static/js/239.90b17eff.chunk.js": "/GCMT-website/static/js/239.90b17eff.chunk.js",
-    "static/js/977.f26c5ab6.chunk.js": "/GCMT-website/static/js/977.f26c5ab6.chunk.js",
-    "static/js/732.f957402c.chunk.js": "/GCMT-website/static/js/732.f957402c.chunk.js",
-    "static/js/453.905f22d3.chunk.js": "/GCMT-website/static/js/453.905f22d3.chunk.js",
-    "static/media/GCMT-logo.png": "/GCMT-website/static/media/GCMT-logo.e629a3fcb5c1e14689b1.png",
-    "static/media/model.png": "/GCMT-website/static/media/model.d3fa26b8629281512562.png",
-    "static/media/product.jpg": "/GCMT-website/static/media/product.c5d6ad53d97464a296b6.jpg",
-    "index.html": "/GCMT-website/index.html",
-    "main.3daef2f8.css.map": "/GCMT-website/static/css/main.3daef2f8.css.map",
-    "main.4419794a.js.map": "/GCMT-website/static/js/main.4419794a.js.map",
-    "952.26b32017.chunk.js.map": "/GCMT-website/static/js/952.26b32017.chunk.js.map",
-    "239.90b17eff.chunk.js.map": "/GCMT-website/static/js/239.90b17eff.chunk.js.map",
-    "977.f26c5ab6.chunk.js.map": "/GCMT-website/static/js/977.f26c5ab6.chunk.js.map",
-    "732.f957402c.chunk.js.map": "/GCMT-website/static/js/732.f957402c.chunk.js.map",
-    "453.905f22d3.chunk.js.map": "/GCMT-website/static/js/453.905f22d3.chunk.js.map"
+    "main.css": "/gcmt-website/static/css/main.42f1c58c.css",
+    "main.js": "/gcmt-website/static/js/main.49b440c0.js",
+    "static/js/952.26b32017.chunk.js": "/gcmt-website/static/js/952.26b32017.chunk.js",
+    "static/js/239.90b17eff.chunk.js": "/gcmt-website/static/js/239.90b17eff.chunk.js",
+    "static/js/977.f26c5ab6.chunk.js": "/gcmt-website/static/js/977.f26c5ab6.chunk.js",
+    "static/js/732.f957402c.chunk.js": "/gcmt-website/static/js/732.f957402c.chunk.js",
+    "static/js/453.905f22d3.chunk.js": "/gcmt-website/static/js/453.905f22d3.chunk.js",
+    "static/media/GCMT-logo.png": "/gcmt-website/static/media/GCMT-logo.e629a3fcb5c1e14689b1.png",
+    "static/media/model.png": "/gcmt-website/static/media/model.d3fa26b8629281512562.png",
+    "static/media/product.jpg": "/gcmt-website/static/media/product.c5d6ad53d97464a296b6.jpg",
+    "index.html": "/gcmt-website/index.html",
+    "main.42f1c58c.css.map": "/gcmt-website/static/css/main.42f1c58c.css.map",
+    "main.49b440c0.js.map": "/gcmt-website/static/js/main.49b440c0.js.map",
+    "952.26b32017.chunk.js.map": "/gcmt-website/static/js/952.26b32017.chunk.js.map",
+    "239.90b17eff.chunk.js.map": "/gcmt-website/static/js/239.90b17eff.chunk.js.map",
+    "977.f26c5ab6.chunk.js.map": "/gcmt-website/static/js/977.f26c5ab6.chunk.js.map",
+    "732.f957402c.chunk.js.map": "/gcmt-website/static/js/732.f957402c.chunk.js.map",
+    "453.905f22d3.chunk.js.map": "/gcmt-website/static/js/453.905f22d3.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.3daef2f8.css",
-    "static/js/main.4419794a.js"
+    "static/css/main.42f1c58c.css",
+    "static/js/main.49b440c0.js"
   ]
 }
