@@ -2,7 +2,7 @@
   "name": "gcmt-website",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://gcmt1.github.io/GCMT-website/" ,
+  "homepage": "https://gcmt1.github.io/gcmt-website/" ,
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "@testing-library/dom": "^10.4.0",
