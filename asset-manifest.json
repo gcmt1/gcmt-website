@@ -1,26 +1,26 @@
 {
   "files": {
-    "main.css": "/gcmt-website/static/css/main.42f1c58c.css",
-    "main.js": "/gcmt-website/static/js/main.49b440c0.js",
-    "static/js/952.26b32017.chunk.js": "/gcmt-website/static/js/952.26b32017.chunk.js",
-    "static/js/239.90b17eff.chunk.js": "/gcmt-website/static/js/239.90b17eff.chunk.js",
-    "static/js/977.f26c5ab6.chunk.js": "/gcmt-website/static/js/977.f26c5ab6.chunk.js",
-    "static/js/732.f957402c.chunk.js": "/gcmt-website/static/js/732.f957402c.chunk.js",
-    "static/js/453.905f22d3.chunk.js": "/gcmt-website/static/js/453.905f22d3.chunk.js",
-    "static/media/GCMT-logo.png": "/gcmt-website/static/media/GCMT-logo.e629a3fcb5c1e14689b1.png",
-    "static/media/model.png": "/gcmt-website/static/media/model.d3fa26b8629281512562.png",
-    "static/media/product.jpg": "/gcmt-website/static/media/product.c5d6ad53d97464a296b6.jpg",
-    "index.html": "/gcmt-website/index.html",
-    "main.42f1c58c.css.map": "/gcmt-website/static/css/main.42f1c58c.css.map",
-    "main.49b440c0.js.map": "/gcmt-website/static/js/main.49b440c0.js.map",
-    "952.26b32017.chunk.js.map": "/gcmt-website/static/js/952.26b32017.chunk.js.map",
-    "239.90b17eff.chunk.js.map": "/gcmt-website/static/js/239.90b17eff.chunk.js.map",
-    "977.f26c5ab6.chunk.js.map": "/gcmt-website/static/js/977.f26c5ab6.chunk.js.map",
-    "732.f957402c.chunk.js.map": "/gcmt-website/static/js/732.f957402c.chunk.js.map",
-    "453.905f22d3.chunk.js.map": "/gcmt-website/static/js/453.905f22d3.chunk.js.map"
+    "main.css": "/static/css/main.b862ef62.css",
+    "main.js": "/static/js/main.0a3552bd.js",
+    "static/js/952.26b32017.chunk.js": "/static/js/952.26b32017.chunk.js",
+    "static/js/239.90b17eff.chunk.js": "/static/js/239.90b17eff.chunk.js",
+    "static/js/977.f26c5ab6.chunk.js": "/static/js/977.f26c5ab6.chunk.js",
+    "static/js/732.f957402c.chunk.js": "/static/js/732.f957402c.chunk.js",
+    "static/js/453.905f22d3.chunk.js": "/static/js/453.905f22d3.chunk.js",
+    "static/media/GCMT-logo.png": "/static/media/GCMT-logo.e629a3fcb5c1e14689b1.png",
+    "static/media/model.png": "/static/media/model.d3fa26b8629281512562.png",
+    "static/media/product.jpg": "/static/media/product.c5d6ad53d97464a296b6.jpg",
+    "index.html": "/index.html",
+    "main.b862ef62.css.map": "/static/css/main.b862ef62.css.map",
+    "main.0a3552bd.js.map": "/static/js/main.0a3552bd.js.map",
+    "952.26b32017.chunk.js.map": "/static/js/952.26b32017.chunk.js.map",
+    "239.90b17eff.chunk.js.map": "/static/js/239.90b17eff.chunk.js.map",
+    "977.f26c5ab6.chunk.js.map": "/static/js/977.f26c5ab6.chunk.js.map",
+    "732.f957402c.chunk.js.map": "/static/js/732.f957402c.chunk.js.map",
+    "453.905f22d3.chunk.js.map": "/static/js/453.905f22d3.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.42f1c58c.css",
-    "static/js/main.49b440c0.js"
+    "static/css/main.b862ef62.css",
+    "static/js/main.0a3552bd.js"
   ]
 }
