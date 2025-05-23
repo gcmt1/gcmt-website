@@ -1,17 +1,26 @@
 {
   "files": {
-    "main.css": "/gcmt-website/static/css/main.b529bb6a.css",
-    "main.js": "/gcmt-website/static/js/main.1b2cc704.js",
+    "main.css": "/gcmt-website/static/css/main.42f1c58c.css",
+    "main.js": "/gcmt-website/static/js/main.9c46bb9b.js",
+    "static/js/952.26b32017.chunk.js": "/gcmt-website/static/js/952.26b32017.chunk.js",
+    "static/js/239.90b17eff.chunk.js": "/gcmt-website/static/js/239.90b17eff.chunk.js",
+    "static/js/977.f26c5ab6.chunk.js": "/gcmt-website/static/js/977.f26c5ab6.chunk.js",
+    "static/js/732.f957402c.chunk.js": "/gcmt-website/static/js/732.f957402c.chunk.js",
     "static/js/453.905f22d3.chunk.js": "/gcmt-website/static/js/453.905f22d3.chunk.js",
-    "static/media/product.jpg": "/gcmt-website/static/media/product.42dae6b375ae95962d88.jpg",
     "static/media/GCMT-logo.png": "/gcmt-website/static/media/GCMT-logo.e629a3fcb5c1e14689b1.png",
+    "static/media/model.png": "/gcmt-website/static/media/model.d3fa26b8629281512562.png",
+    "static/media/product.jpg": "/gcmt-website/static/media/product.c5d6ad53d97464a296b6.jpg",
     "index.html": "/gcmt-website/index.html",
-    "main.b529bb6a.css.map": "/gcmt-website/static/css/main.b529bb6a.css.map",
-    "main.1b2cc704.js.map": "/gcmt-website/static/js/main.1b2cc704.js.map",
+    "main.42f1c58c.css.map": "/gcmt-website/static/css/main.42f1c58c.css.map",
+    "main.9c46bb9b.js.map": "/gcmt-website/static/js/main.9c46bb9b.js.map",
+    "952.26b32017.chunk.js.map": "/gcmt-website/static/js/952.26b32017.chunk.js.map",
+    "239.90b17eff.chunk.js.map": "/gcmt-website/static/js/239.90b17eff.chunk.js.map",
+    "977.f26c5ab6.chunk.js.map": "/gcmt-website/static/js/977.f26c5ab6.chunk.js.map",
+    "732.f957402c.chunk.js.map": "/gcmt-website/static/js/732.f957402c.chunk.js.map",
     "453.905f22d3.chunk.js.map": "/gcmt-website/static/js/453.905f22d3.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.b529bb6a.css",
-    "static/js/main.1b2cc704.js"
+    "static/css/main.42f1c58c.css",
+    "static/js/main.9c46bb9b.js"
   ]
 }
