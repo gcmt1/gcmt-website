@@ -1,83 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../supabaseClient';
 import '../styles/HomePage.css';
-import productPhoto from '../assets/product.jpg';
-import { ChevronRight, Star, Truck, Shield, Leaf, Instagram, ArrowRight, ShoppingCart } from 'lucide-react';
+import productPhoto from '../assets/model.png';
+import { ArrowRight, Instagram, Star } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
 
 const HomePage = () => {
+  const [products, setProducts] = useState([]);
+  const [isDataFetched, setIsDataFetched] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  
-  // Featured products data
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Immunity Booster",
-      description: "Natural herbal supplement to enhance your immune system.",
-      price: "₹899",
-      originalPrice: "₹1,199",
-      image: productPhoto,
-      badge: "Best Seller"
-    },
-    {
-      id: 2,
-      name: "Stress Relief Formula",
-      description: "Calming blend of adaptogenic herbs for stress management.",
-      price: "₹799",
-      originalPrice: "₹999",
-      image: productPhoto,
-      badge: "New"
-    },
-    {
-      id: 3,
-      name: "Joint Care Complex",
-      description: "Traditional herbs for joint health and mobility support.",
-      price: "₹849",
-      originalPrice: "₹1,099",
-      image: productPhoto,
-      badge: ""
-    },
-    {
-      id: 4,
-      name: "Sleep & Relaxation",
-      description: "Natural solution for quality sleep and relaxation.",
-      price: "₹749",
-      originalPrice: "₹949",
-      image: productPhoto,
-      badge: "Limited"
-    }
-  ];
-  
-  // Testimonials data
+
   const testimonials = [
-    {
-      quote: "GCMT Herbal products have transformed my health journey. The Immunity Booster has been a daily essential for me and my family.",
-      author: "Priya Sharma",
-      location: "Delhi"
-    },
-    {
-      quote: "As someone who's tried many natural supplements, GCMT Herbal stands out for its quality and effectiveness. Their Joint Care Complex has given me mobility I hadn't experienced in years.",
-      author: "Rajesh Patel",
-      location: "Mumbai"
-    },
-    {
-      quote: "The Sleep & Relaxation formula has been life-changing. I finally get restful sleep after years of struggling. Their customer service is exceptional too!",
-      author: "Anjali Mehta",
-      location: "Bangalore"
-    }
+    { quote: "Amazing product!", author: "John Doe", location: "New York" },
+    { quote: "Highly recommend!", author: "Jane Smith", location: "California" },
+    { quote: "Will buy again!", author: "Alice Brown", location: "Texas" },
   ];
-  
-  // Categories data
-  const categories = [
-    { name: "Immunity", icon: "🌿" },
-    { name: "Digestion", icon: "🍃" },
-    { name: "Sleep", icon: "🌙" },
-    { name: "Energy", icon: "⚡" },
-    { name: "Joint Care", icon: "💪" },
-    { name: "Skin Health", icon: "✨" }
-  ];
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) {
+        console.error('Error fetching products:', error);
+      } else {
+        setProducts(data);
+        setIsDataFetched(true);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   return (
     <div className="homepage">
-      
       {/* Announcement Bar */}
       <div className="announcement-bar">
         <p>Free shipping on orders above ₹999 | COD Available | 100% Secure Checkout</p>
@@ -93,95 +51,32 @@ const HomePage = () => {
             <button className="secondary-button">Learn Our Story</button>
           </div>
         </div>
-        <div className="hero-image">
-          {/* This would typically be a separate image with proper styling */}
-        </div>
+        <div className="hero-image"></div>
       </section>
-      
-      {/* Trust Bar */}
-      <section className="trust-bar">
-        <div className="trust-item">
-          <Leaf size={24} />
-          <span>100% Natural</span>
-        </div>
-        <div className="trust-item">
-          <Shield size={24} />
-          <span>Certified Organic</span>
-        </div>
-        <div className="trust-item">
-          <Truck size={24} />
-          <span>Fast Delivery</span>
-        </div>
-        <div className="trust-item">
-          <Star size={24} />
-          <span>5000+ Reviews</span>
-        </div>
-      </section>
-      
-      {/* Category Navigation */}
-      <section className="category-navigation">
-        <h2>Shop By Category</h2>
-        <div className="category-grid">
-          {categories.map((category, index) => (
-            <div key={index} className="category-card">
-              <div className="category-icon">{category.icon}</div>
-              <h3>{category.name}</h3>
-              <a href={`/category/${category.name.toLowerCase()}`} className="category-link">
-                Shop Now <ChevronRight size={16} />
-              </a>
-            </div>
-          ))}
-        </div>
-      </section>
-      
+
       {/* Featured Products */}
       <section className="featured-products">
         <div className="section-header">
-          <h2>Best Selling Products</h2>
+          <h2>Latest Products</h2>
           <a href="/shop" className="view-all">
             View All <ArrowRight size={16} />
           </a>
         </div>
         <div className="product-grid">
-          {featuredProducts.map(product => (
-            <div key={product.id} className="product-card">
-              {product.badge && <span className="product-badge">{product.badge}</span>}
-              <div className="product-image-container">
-                <img src={product.image} alt={product.name} />
-                <button className="quick-add-btn">
-                  <ShoppingCart size={18} />
-                  <span>Quick Add</span>
-                </button>
-              </div>
-              <div className="product-info">
-                <h3>{product.name}</h3>
-                <p className="product-description">{product.description}</p>
-                <div className="product-price">
-                  <span className="current-price">{product.price}</span>
-                  {product.originalPrice && (
-                    <span className="original-price">{product.originalPrice}</span>
-                  )}
-                </div>
-                <div className="product-rating">
-                  <div className="stars">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} fill="#FFD700" color="#FFD700" />
-                    ))}
-                  </div>
-                  <span>(124)</span>
-                </div>
-              </div>
-            </div>
-          ))}
+          {isDataFetched && products.length > 0 ? (
+            products.map(product => (
+              <ProductCard key={product.id} productId={product.id} />
+            ))
+          ) : (
+            <p>No products found or loading...</p>
+          )}
         </div>
       </section>
-      
+
       {/* Benefits Section */}
       <section className="benefits">
         <div className="benefits-container">
-          <div className="benefit-image">
-            {/* This would be a proper image in production */}
-          </div>
+          <div className="benefit-image"></div>
           <div className="benefit-content">
             <h2>The GCMT Herbal Difference</h2>
             <ul className="benefits-list">
@@ -218,12 +113,12 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Testimonials Carousel */}
       <section className="testimonials">
         <h2>Customer Experiences</h2>
         <div className="testimonial-carousel">
-          <div className="testimonial-slide" style={{transform: `translateX(-${activeTestimonial * 100}%)`}}>
+          <div className="testimonial-slide" style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}>
             {testimonials.map((testimonial, index) => (
               <div key={index} className="testimonial-card">
                 <div className="testimonial-stars">
@@ -241,8 +136,8 @@ const HomePage = () => {
           </div>
           <div className="testimonial-controls">
             {testimonials.map((_, index) => (
-              <button 
-                key={index} 
+              <button
+                key={index}
                 className={`testimonial-dot ${index === activeTestimonial ? 'active' : ''}`}
                 onClick={() => setActiveTestimonial(index)}
               />
@@ -250,17 +145,16 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Instagram Feed */}
       <section className="instagram-feed">
         <div className="section-header">
-          <h2>Follow Us @GCMTHerbal</h2>
-          <a href="https://instagram.com/gcmtherbal" className="view-all" target="_blank" rel="noopener noreferrer">
+          <h2>Follow Us @gcmt.shop.official</h2>
+          <a href="https://www.instagram.com/gcmt.shop.official/?utm_source=ig_web_button_share_sheet" className="view-all" target="_blank" rel="noopener noreferrer">
             View Our Instagram <Instagram size={16} />
           </a>
         </div>
         <div className="instagram-grid">
-          {/* In a real implementation, these would be actual Instagram posts */}
           {[...Array(6)].map((_, i) => (
             <div key={i} className="instagram-post">
               <img src={productPhoto} alt="Instagram post" />
@@ -271,7 +165,7 @@ const HomePage = () => {
           ))}
         </div>
       </section>
-      
+
       {/* Newsletter Section */}
       <section className="newsletter">
         <div className="newsletter-content">
@@ -284,7 +178,7 @@ const HomePage = () => {
           <p className="newsletter-disclaimer">By subscribing, you agree to our privacy policy and consent to receive marketing emails.</p>
         </div>
       </section>
-      
+
       {/* Promo Bar */}
       <section className="promo-bar">
         <p>Limited Time Offer: Use code WELCOME15 for 15% off your first order!</p>
