@@ -14,15 +14,10 @@ import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import ThankYouPage from "./pages/ThankYou";
 import Checkout from "./pages/CheckOut";
-import { ToastProvider } from "./components/ToastContext";
-import { AppProvider } from './AppContext';
-
 import "./App.css";
 
 function App() {
   return (
-    <AppProvider>
-      <ToastProvider>
         <Router>
           <div className="app-container">
             {/* Sticky Navbar */}
@@ -51,8 +46,6 @@ function App() {
             </footer>
           </div>
         </Router>
-      </ToastProvider>
-    </AppProvider>
   );
 }
 
