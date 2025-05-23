@@ -43,7 +43,7 @@ function App() {
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/thankyou/:orderId" element={<ThankYouPage />} />
-                <Route path="*" element={<div>404 Not Found</div>} />
+                <Route path="*" element={HomePage} />
               </Routes>
             </main>
             <footer className="app-footer">
