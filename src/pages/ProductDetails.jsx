@@ -175,9 +175,7 @@ const ProductDetail = () => {
             <div className="product-meta">
               <div className="product-rating">
                 {renderStars(product.rating)}
-                <span className="review-count">({product.reviews} reviews)</span>
               </div>
-              <span className="product-sku">SKU: {product.sku}</span>
             </div>
             
             <p className="product-short-desc">{product.shortDescription}</p>
