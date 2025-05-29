@@ -8,7 +8,6 @@ const ContactPage = () => {
     name: '', 
     email: '', 
     phone: '',
-    subject: '',
     message: '' 
   });
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -68,7 +67,7 @@ const ContactPage = () => {
               <Mail className="contact-icon" size={20} />
               <div>
                 <h3>Email Us</h3>
-                <p>support@yourstore.com</p>
+                <p>gcmtshop@gmail.com</p>
               </div>
             </div>
             
@@ -76,7 +75,7 @@ const ContactPage = () => {
               <Phone className="contact-icon" size={20} />
               <div>
                 <h3>Call Us</h3>
-                <p>+1 (800) 123-4567</p>
+                <p>+91 6355043113</p>
               </div>
             </div>
             
@@ -84,7 +83,7 @@ const ContactPage = () => {
               <MapPin className="contact-icon" size={20} />
               <div>
                 <h3>Visit Us</h3>
-                <p>123 Commerce Street<br />Retail District, CA 90210</p>
+                <p>Pratik Mall<br />Kudasan, Gandhinagar, Gujarat</p>
               </div>
             </div>
             
@@ -144,16 +143,6 @@ const ContactPage = () => {
               </div>
               
               <div className="form-group">
-                <label htmlFor="subject">Subject</label>
-                <input
-                  id="subject"
-                  type="text"
-                  name="subject"
-                  value={form.subject}
-                  onChange={handleChange}
-                  placeholder="What is this regarding?"
-                  required
-                />
               </div>
             </div>
             

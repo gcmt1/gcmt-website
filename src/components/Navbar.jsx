@@ -1,324 +1,263 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { Menu, X, ShoppingCart, Search, User, ShoppingBag, Heart, LogIn } from 'lucide-react';
+import {
+  Menu,
+  X,
+  ShoppingCart,
+  Search,
+  User
+} from 'lucide-react';
 import '../styles/Navbar.css';
 import logo from '../assets/GCMT-logo.png';
 
-const NavBar = () => {
+export default function NavBar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  // Check for authenticated user on mount and auth state changes
+  const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+
+  // Fetch session + cart
   useEffect(() => {
-    const fetchSession = async () => {
+    async function init() {
       const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user);
-      
-      // Fetch cart count if user is logged in
-      if (data.session?.user) {
-        fetchCartCount(data.session.user.id);
-      }
-    };
-    
-    fetchSession();
+      setUser(data.session?.user || null);
+      if (data.session?.user) fetchCartCount(data.session.user.id);
+    }
+    init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user);
-      
-      // Update cart count when auth state changes
-      if (session?.user) {
-        fetchCartCount(session.user.id);
-      } else {
-        setCartCount(0);
-      }
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user || null);
+      if (session?.user) fetchCartCount(session.user.id);
+      else setCartCount(0);
     });
-
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Handle scroll effect for navbar
+  // Scroll listener
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Fetch cart count for the user
-  const fetchCartCount = async (userId) => {
+  // Click outside to close search
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
+      }
+    }
+    if (searchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [searchOpen]);
+
+  // Disable body scroll when mobile menu open
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  async function fetchCartCount(userId) {
     try {
       const { data, error } = await supabase
         .from('cart_items')
-        .select('*')
+        .select('quantity')
         .eq('user_id', userId);
-        
       if (error) throw error;
-      
-      // Calculate total quantity across all cart items
-      const totalItems = data.reduce((sum, item) => sum + item.quantity, 0);
-      setCartCount(totalItems);
-    } catch (error) {
-      console.error('Error fetching cart:', error);
+      setCartCount(data.reduce((sum, row) => sum + row.quantity, 0));
+    } catch {
       setCartCount(0);
     }
-  };
+  }
 
-  // Handle user login
-  const handleLogin = async (e) => {
+  function handleSearch(e) {
     e.preventDefault();
-    
-    const email = e.target.email.value;
-    const password = e.target.password.value;
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
-      // Close modal on successful login
-      setLoginModalOpen(false);
-      displayToast('Logged in successfully!', 'success');
-    } catch (error) {
-      displayToast(error.message || 'Failed to log in. Please try again.', 'error');
+    const q = e.target.querySelector('input').value.trim();
+    if (q) {
+      window.location.href = `/search?q=${encodeURIComponent(q)}`;
+      setSearchOpen(false);
     }
-  };
+  }
 
-  // Handle user logout
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      displayToast('Logged out successfully!', 'success');
-    } catch (error) {
-      displayToast('Failed to log out. Please try again.', 'error');
-    }
-  };
+  function toggleSearch() {
+    setSearchOpen(open => !open);
+    if (!searchOpen) setMobileMenuOpen(false);
+  }
 
-  // Toggle login modal
-  const handleLoginModalToggle = () => {
-    setLoginModalOpen(!loginModalOpen);
-  };
+  function toggleMobileMenu() {
+    setMobileMenuOpen(open => !open);
+    if (!mobileMenuOpen) setSearchOpen(false);
+  }
 
-  // Close all menus
-  const closeAllMenus = () => {
-    setSearchOpen(false);
+  function closeMobileMenu() {
     setMobileMenuOpen(false);
-    setLoginModalOpen(false);
-  };
-
-  // Toast notification system
-  const displayToast = (message, type = 'info') => {
-    const toastContainer = document.getElementById('toast-container') || createToastContainer();
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerText = message;
-    toastContainer.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toastContainer.removeChild(toast), 300);
-      }, 3000);
-    }, 100);
-  };
-
-  const createToastContainer = () => {
-    const container = document.createElement('div');
-    container.id = 'toast-container';
-    document.body.appendChild(container);
-    return container;
-  };
-
-  // Handle search functionality
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const searchTerm = e.target.querySelector('input').value.trim();
-    
-    if (searchTerm) {
-      window.location.href = `/search?q=${encodeURIComponent(searchTerm)}`;
-    }
-  };
+  }
 
   return (
-    <>
-      <header className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-        <div className="navbar-container">
-          {/* Logo */}
-          <div className="navbar-logo">
-            <a href="/">
-              <img src={logo} alt="GCMT Herbal" />
-            </a>
-          </div>
+    <header
+      className={`gcmt-navbar
+        ${isScrolled ? 'gcmt-navbar--scrolled' : ''}
+        ${mobileMenuOpen ? 'gcmt-navbar--mobile-open' : ''}
+      `}
+    >
+      <div className="gcmt-navbar__container">
+        {/* Logo */}
+        <div className="gcmt-navbar__logo">
+          <a href="/">
+            <img src={logo} alt="GCMT Herbal" />
+          </a>
+        </div>
 
-          {/* Desktop/Mobile Navigation Menu */}
-          <nav className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
-            <ul className="navbar-links">
-              <li><a href="/" className="navbar-link">Home</a></li>
-              <li><a href="/products" className="navbar-link">Products</a></li>
-              <li><a href="/about" className="navbar-link">About</a></li>
-              <li><a href="/blog" className="navbar-link">Blog</a></li>
-              <li><a href="/contact" className="navbar-link">Contact</a></li>
-              <li><a href="/faq" className="navbar-link">FAQ</a></li>
-              
-              {/* Mobile-only user actions */}
-              <li className="mobile-only">
-                {user ? (
-                  <>
-                    <a href="/profile" className="navbar-link">My Profile</a>
-                    <a href="/orders" className="navbar-link">My Orders</a>
-                    <a href="/wishlist" className="navbar-link">Wishlist</a>
-                    <button onClick={handleLogout} className="logout-link">Logout</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={handleLoginModalToggle} className="navbar-link">Sign In</button>
-                    <a href="/register" className="navbar-link">Register</a>
-                  </>
-                )}
-              </li>
-            </ul>
-            <button className="close-menu-btn" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
-              <X size={24} />
-            </button>
-          </nav>
-
-          {/* Action Buttons */}
-          <div className="navbar-actions">
-            {/* Search */}
-            <div className="search-container">
-              <button className="action-btn" onClick={() => setSearchOpen(!searchOpen)} aria-label="Search">
-                <Search size={20} />
-              </button>
-              {searchOpen && (
-                <div className="search-dropdown active">
-                  <form className="search-form" onSubmit={handleSearch}>
-                    <input type="search" placeholder="Search for products..." />
-                    <button type="submit"><Search size={18} /></button>
-                  </form>
-                </div>
-              )}
-            </div>
-
-            {/* Profile */}
-            <div className="profile-container">
-              {user ? (
-                <a href="/profile" className="action-btn profile-btn" aria-label="My Profile">
-                  <User size={20} />
-                  <span className="profile-indicator"></span>
+        {/* Desktop & Mobile Menu */}
+        <nav
+          className={`gcmt-navbar__menu ${
+            mobileMenuOpen ? 'gcmt-navbar__menu--open' : ''
+          }`}
+        >
+          <ul className="gcmt-navbar__links">
+            {['Home','Products','About','Blog','Contact','FAQ'].map(label => (
+              <li key={label}>
+                <a
+                  href={`#/${label.toLowerCase()}`}
+                  className="gcmt-navbar__link"
+                  onClick={closeMobileMenu}
+                >
+                  {label}
                 </a>
-              ) : (
-                <button className="action-btn" onClick={handleLoginModalToggle} aria-label="Sign In">
-                  <User size={20} />
+              </li>
+            ))}
+
+            <li className="gcmt-navbar__mobile-only">
+              {user ? (
+                <button
+                  onClick={() => { supabase.auth.signOut(); closeMobileMenu(); }}
+                  className="gcmt-navbar__logout-link"
+                >
+                  Logout
                 </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { toggleMobileMenu(); }}
+                    className="gcmt-navbar__link"
+                  >
+                    Sign In
+                  </button>
+                  <a
+                    href="#/auth"
+                    className="gcmt-navbar__link"
+                    onClick={closeMobileMenu}
+                  >
+                    Register
+                  </a>
+                </>
               )}
-            </div>
+            </li>
+          </ul>
 
-            {/* Cart */}
-            <a href="/cart" className="action-btn cart-btn" aria-label="Shopping cart">
-              <ShoppingCart size={20} />
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-            </a>
+          <button
+            className="gcmt-navbar__close-btn"
+            onClick={closeMobileMenu}
+            aria-label="Close menu"
+          >
+            <X size={24} />
+          </button>
+        </nav>
 
-            {/* Mobile Menu Toggle */}
-            <button className="menu-toggle" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
-              <Menu size={24} />
+        {/* Actions */}
+        <div className="gcmt-navbar__actions">
+          {/* Search */}
+          <div className="gcmt-navbar__search-container" ref={searchRef}>
+            <button
+              className="gcmt-navbar__action-btn"
+              onClick={toggleSearch}
+              aria-label="Search"
+              aria-expanded={searchOpen}
+            >
+              <Search size={20} />
             </button>
-          </div>
-        </div>
-
-        {/* Mobile Search */}
-        <div className={`mobile-search ${searchOpen ? 'active' : ''}`}>
-          <form className="mobile-search-form" onSubmit={handleSearch}>
-            <input type="search" placeholder="Search for products..." />
-            <button type="submit"><Search size={18} /></button>
-          </form>
-        </div>
-
-        {/* Mobile Menu Backdrop */}
-        {mobileMenuOpen && <div className="menu-backdrop" onClick={() => setMobileMenuOpen(false)}></div>}
-      </header>
-
-      {/* Login Modal */}
-      {loginModalOpen && (
-        <div className="login-modal-overlay" onClick={handleLoginModalToggle}>
-          <div className="login-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal-btn" onClick={handleLoginModalToggle}>
-              <X size={20} />
-            </button>
-            <div className="login-modal-header">
-              <h2>Sign In</h2>
-              <p>Welcome back! Sign in to your account</p>
+            <div className={`gcmt-navbar__search-dropdown ${searchOpen ? 'active' : ''}`}>
+              <form className="gcmt-navbar__search-form" onSubmit={handleSearch}>
+                <input
+                  type="search"
+                  placeholder="Search products..."
+                  autoFocus={searchOpen}
+                  required
+                />
+                <button type="submit" aria-label="Submit search">
+                  <Search size={18} />
+                </button>
+              </form>
             </div>
-            <form className="login-form" onSubmit={handleLogin}>
-              <div className="form-group">
-                <label htmlFor="email">Email Address</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="email"
-                  placeholder="Enter your email" 
-                  required 
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input 
-                  type="password" 
-                  id="password" 
-                  name="password"
-                  placeholder="Enter your password" 
-                  required 
-                />
-                <a href="/forgot-password" className="forgot-password">Forgot password?</a>
-              </div>
-              <button type="submit" className="submit-btn">Sign In</button>
-              <div className="social-login">
-                <p>Or sign in with</p>
-                <div className="social-buttons">
-                  <button 
-                    type="button" 
-                    className="google-btn"
-                    onClick={() => supabase.auth.signInWithOAuth({
-                      provider: 'google',
-                      options: {
-                        redirectTo: `${window.location.origin}/auth/callback`
-                      }
-                    })}
-                  >
-                    Google
-                  </button>
-                  <button 
-                    type="button" 
-                    className="facebook-btn"
-                    onClick={() => supabase.auth.signInWithOAuth({
-                      provider: 'facebook',
-                      options: {
-                        redirectTo: `${window.location.origin}/auth/callback`
-                      }
-                    })}
-                  >
-                    Facebook
-                  </button>
-                </div>
-              </div>
-              <p className="register-link">
-                Don't have an account? <a href="/register">Register now</a>
-              </p>
-            </form>
           </div>
+
+          {/* Profile */}
+          <div className="gcmt-navbar__profile-container">
+            {user ? (
+              <a
+                href="#/profile"
+                className="gcmt-navbar__action-btn gcmt-navbar__profile-btn"
+                aria-label="Profile"
+              >
+                <User size={20} />
+                <span className="gcmt-navbar__profile-indicator" />
+              </a>
+            ) : (
+              <button
+                className="gcmt-navbar__action-btn"
+                onClick={() => {}}
+                aria-label="Sign In"
+              >
+                <User size={20} />
+              </button>
+            )}
+          </div>
+
+          {/* Cart */}
+          <a
+            href="#/cart"
+            className="gcmt-navbar__action-btn gcmt-navbar__cart-btn"
+            aria-label={`Cart${cartCount ? ` (${cartCount})` : ''}`}
+          >
+            <ShoppingCart size={20} />
+            {cartCount > 0 && (
+              <span className="gcmt-navbar__cart-badge">{cartCount}</span>
+            )}
+          </a>
+
+          {/* Mobile Toggle */}
+          <button
+            className="gcmt-navbar__toggle"
+            onClick={toggleMobileMenu}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+          >
+            <Menu size={24} />
+          </button>
         </div>
+      </div>
+
+      {/* Mobile Search Panel */}
+
+
+      {/* Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className={`gcmt-navbar__backdrop active`}
+          onClick={closeMobileMenu}
+          aria-hidden="true"
+        />
       )}
-    </>
+    </header>
   );
-};
-
-export default NavBar;
+}

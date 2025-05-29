@@ -7,7 +7,10 @@ export function ToastProvider({ children }) {
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type, visible: true });
-    setTimeout(() => setToast({ ...toast, visible: false }), 3000);
+
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 3000);
   };
 
   return (

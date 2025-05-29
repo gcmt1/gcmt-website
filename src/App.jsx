@@ -1,5 +1,7 @@
 import React from "react";
-import { HashRouter as Router, Routes, Route } from "react-router-dom"; // ✅ changed from BrowserRouter
+import { HashRouter as Router, Routes, Route } from "react-router-dom"; // ✅ Using HashRouter
+import { AppProvider } from "./AppContext";
+import { ToastProvider } from "./components/ToastContext"; // <-- import
 
 import HomePage from "./pages/HomePage";
 import ProductListingPage from "./pages/ProductListings";
@@ -14,16 +16,23 @@ import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import ThankYouPage from "./pages/ThankYou";
 import Checkout from "./pages/CheckOut";
+import Tnc from "./pages/TnC"; // Terms and Conditions page
+import Footer from "./components/Footer"; // Import Footer component
+import ScrollToTop from './components/ScrollToTop';
 import "./App.css";
 
 function App() {
   return (
-        <Router>
+    <AppProvider>
+      <ToastProvider> {/* Wrap the entire app with ToastProvider */}
+        <Router> {/* Router wraps the ScrollToTop */}
+          <ScrollToTop /> {/* Now inside the Router */}
           <div className="app-container">
             {/* Sticky Navbar */}
             <header className="app-header">
               <Navbar />
             </header>
+
             <main className="app-main">
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -38,14 +47,22 @@ function App() {
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/thankyou/:orderId" element={<ThankYouPage />} />
-                <Route path="*" element={HomePage} />
+                <Route path="/terms-and-conditions" element={<Tnc />} />
+                <Route path="/tnc" element={<Tnc />} /> {/* Alias for Terms and Conditions */}
+
+                {/* Catch-all route for 404s - fallback to HomePage */}
+                <Route path="*" element={<HomePage />} />
               </Routes>
             </main>
+
             <footer className="app-footer">
+              <Footer />
               <p>© 2025 Chase WorldWide. All rights reserved.</p>
             </footer>
           </div>
         </Router>
+      </ToastProvider> {/* Close ToastProvider */}
+    </AppProvider>
   );
 }
 

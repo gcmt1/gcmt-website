@@ -38,27 +38,29 @@ const HomePage = () => {
     <div className="homepage">
       {/* Announcement Bar */}
       <div className="announcement-bar">
-        <p>Free shipping on orders above ₹999 | COD Available | 100% Secure Checkout</p>
+        <p>Free shipping on your first order | 100% Secure Checkout</p>
       </div>
 
-      {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
           <h1>Natural Wellness, <br />Rooted in Tradition</h1>
           <p>Premium herbal supplements crafted from ancient Ayurvedic wisdom, backed by modern science.</p>
           <div className="hero-cta">
-            <button className="primary-button">Shop Best Sellers</button>
-            <button className="secondary-button">Learn Our Story</button>
+            <a href="#/products">
+              <button className="primary-button">Shop Now</button>
+            </a>
+            <a href="#/about">
+              <button className="secondary-button">Learn Our Story</button>
+            </a>
           </div>
         </div>
         <div className="hero-image"></div>
       </section>
 
-      {/* Featured Products */}
       <section className="featured-products">
         <div className="section-header">
           <h2>Latest Products</h2>
-          <a href="/shop" className="view-all">
+          <a href="#/products" className="view-all">
             View All <ArrowRight size={16} />
           </a>
         </div>
@@ -164,24 +166,6 @@ const HomePage = () => {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="newsletter">
-        <div className="newsletter-content">
-          <h2>Join Our Wellness Journey</h2>
-          <p>Subscribe to receive health tips, exclusive offers, and updates on new products.</p>
-          <form className="newsletter-form">
-            <input type="email" placeholder="Your email address" required />
-            <button type="submit">Subscribe</button>
-          </form>
-          <p className="newsletter-disclaimer">By subscribing, you agree to our privacy policy and consent to receive marketing emails.</p>
-        </div>
-      </section>
-
-      {/* Promo Bar */}
-      <section className="promo-bar">
-        <p>Limited Time Offer: Use code WELCOME15 for 15% off your first order!</p>
       </section>
     </div>
   );

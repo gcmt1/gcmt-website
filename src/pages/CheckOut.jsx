@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAppContext } from '../AppContext';
-import { useToast } from '../components/ToastContext';
+import { useToast } from "../components/ToastContext";
 import { useNavigate } from 'react-router-dom';
 import InvoiceDownloadButton from '../components/InvoiceDownloadButton';
 import '../styles/CheckOut.css';
