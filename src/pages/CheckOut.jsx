@@ -225,8 +225,8 @@ export default function Checkout() {
       const { data, error } = await supabase.functions.invoke('createOrder', {
         body: { 
           order_id: savedOrderId,
-          return_url: `${window.location.origin}/payment-success`,
-          cancel_url: `${window.location.origin}/payment-cancel`
+          return_url: `${window.location.origin}#/payment-success`,
+          cancel_url: `${window.location.origin}#/payment-cancel`
         }
       });
 
