@@ -19,6 +19,7 @@ import Checkout from "./pages/CheckOut";
 import Tnc from "./pages/TnC"; // Terms and Conditions page
 import Footer from "./components/Footer"; // Import Footer component
 import ScrollToTop from './components/ScrollToTop';
+import ThankYou from "./pages/ThankYou"; // Import ThankYou component
 import "./App.css";
 
 function App() {
@@ -49,6 +50,9 @@ function App() {
                 <Route path="/thankyou/:orderId" element={<ThankYouPage />} />
                 <Route path="/terms-and-conditions" element={<Tnc />} />
                 <Route path="/tnc" element={<Tnc />} /> {/* Alias for Terms and Conditions */}
+                <Route path="/thankyou" element={<ThankYou />} /> {/* Fallback ThankYou page */}
+                
+                {/* Catch-all route for 404s */}
 
                 {/* Catch-all route for 404s - fallback to HomePage */}
                 <Route path="*" element={<HomePage />} />

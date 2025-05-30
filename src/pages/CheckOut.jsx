@@ -3,7 +3,6 @@ import { supabase } from '../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from "../components/ToastContext";
 import { useNavigate } from 'react-router-dom';
-import InvoiceDownloadButton from '../components/InvoiceDownloadButton';
 import '../styles/CheckOut.css';
 import InvoiceGenerator from '../components/InvoiceGenerator';
 
@@ -32,9 +31,11 @@ export default function Checkout() {
       setLoadingCart(true);
       try {
         if (!user?.id) {
+          // Guest user: load cart from sessionStorage
           const guestCart = JSON.parse(sessionStorage.getItem('guest_cart')) || [];
           setCartItems(guestCart);
         } else {
+          // Logged-in user: load cart from Supabase
           const { data, error } = await supabase
             .from('cart_items')
             .select(`
@@ -86,7 +87,7 @@ export default function Checkout() {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = 0;
+  const shipping = 0; // Adjust if needed
   const total = subtotal + shipping;
 
   const formatCurrency = amount =>
@@ -140,7 +141,17 @@ export default function Checkout() {
       alert('Please submit your contact information first.');
       return;
     }
+
     setLoading(true);
+
+    // Open the popup immediately to avoid popup blockers
+    const paymentWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!paymentWindow) {
+      alert('Popup blocked! Please allow popups to proceed with payment.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(
         `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/createOrder`,
@@ -154,17 +165,15 @@ export default function Checkout() {
       if (!res.ok) throw new Error('Failed to initiate payment with CCAvenue.');
 
       const html = await res.text();
-      const paymentWindow = window.open('', '_blank');
-      if (paymentWindow) {
-        paymentWindow.document.open();
-        paymentWindow.document.write(html);
-        paymentWindow.document.close();
-      } else {
-        alert('Popup blocked! Please allow popups to proceed with payment.');
-      }
+
+      // Write the payment form HTML into the popup
+      paymentWindow.document.open();
+      paymentWindow.document.write(html);
+      paymentWindow.document.close();
     } catch (err) {
       console.error('CCAvenue payment error:', err);
       alert('Payment initiation failed. Please try again.');
+      paymentWindow.close();
     } finally {
       setLoading(false);
     }
@@ -250,31 +259,32 @@ export default function Checkout() {
             Return to Cart
           </button>
           <div style={{ display: 'flex', gap: 12 }}>
-            <InvoiceGenerator
-              order={{ id: savedOrderId }}
-              userDetails={formData}
-              productList={cartItems.map(item => ({
-                name: item.name,
-                quantity: item.quantity,
-                unit_price: item.price,
-              }))}
-            />
+            <button
+              onClick={handleSaveContactInfo}
+              disabled={loading || contactSaved}
+              className={`btn btn-primary ${contactSaved ? 'btn-disabled' : ''}`}
+            >
+              {contactSaved ? 'Contact Info Saved' : 'Submit Contact Info'}
+            </button>
             <button
               onClick={handlePayment}
-              disabled={loading || !cartItems.length || !contactSaved}
-              className="btn btn-primary btn-lg"
+              disabled={!contactSaved || loading}
+              className="btn btn-success"
             >
-              {loading ? 'Processing…' : `Pay Now: ${formatCurrency(total)}`}
+              {loading ? 'Processing...' : 'Pay with CCAvenue'}
             </button>
           </div>
         </div>
 
-        <div className="security-badge">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" />
-          </svg>
-          <span>100% Secure Payment</span>
-        </div>
+        {/* Optional: Show invoice preview after contact info is saved */}
+        {contactSaved && savedOrderId && (
+          <InvoiceGenerator
+            orderId={savedOrderId}
+            cartItems={cartItems}
+            contactInfo={formData}
+            totalAmount={total}
+          />
+        )}
       </div>
     </div>
   );
