@@ -20,6 +20,7 @@ import Tnc from "./pages/TnC"; // Terms and Conditions page
 import Footer from "./components/Footer"; // Import Footer component
 import ScrollToTop from './components/ScrollToTop';
 import ThankYou from "./pages/ThankYou"; // Import ThankYou component
+import { PaymentSuccess, PaymentCancel, OrderConfirmation } from './pages/PaymentPages';
 import "./App.css";
 
 function App() {
@@ -51,6 +52,10 @@ function App() {
                 <Route path="/terms-and-conditions" element={<Tnc />} />
                 <Route path="/tnc" element={<Tnc />} /> {/* Alias for Terms and Conditions */}
                 <Route path="/thankyou" element={<ThankYou />} /> {/* Fallback ThankYou page */}
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/payment-cancel" element={<PaymentCancel />} />
+                <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+                {/* Add more routes as needed */}
                 
                 {/* Catch-all route for 404s */}
 

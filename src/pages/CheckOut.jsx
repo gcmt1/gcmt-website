@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAppContext } from '../AppContext';
-import { useToast } from "../components/ToastContext";
+import { useToast } from '../components/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/CheckOut.css';
 import InvoiceGenerator from '../components/InvoiceGenerator';
@@ -26,16 +26,15 @@ export default function Checkout() {
     pincode: '',
   });
 
+  // Fetch cart (guest or logged-in)
   useEffect(() => {
-    const fetchCart = async () => {
+    async function fetchCart() {
       setLoadingCart(true);
       try {
         if (!user?.id) {
-          // Guest user: load cart from sessionStorage
           const guestCart = JSON.parse(sessionStorage.getItem('guest_cart')) || [];
           setCartItems(guestCart);
         } else {
-          // Logged-in user: load cart from Supabase
           const { data, error } = await supabase
             .from('cart_items')
             .select(`
@@ -48,16 +47,16 @@ export default function Checkout() {
 
           if (error) throw error;
 
-          const formattedCart = data.map(item => ({
-            id: item.id,
-            productId: item.product_id,
-            name: item.products.product_name,
-            price: item.products.product_price,
-            image: item.products.product_image,
-            quantity: item.quantity,
-          }));
-
-          setCartItems(formattedCart);
+          setCartItems(
+            data.map(item => ({
+              id: item.id,
+              productId: item.product_id,
+              name: item.products.product_name,
+              price: item.products.product_price,
+              image: item.products.product_image,
+              quantity: item.quantity,
+            }))
+          );
         }
       } catch (err) {
         console.error('Fetch cart error:', err.message);
@@ -65,8 +64,7 @@ export default function Checkout() {
       } finally {
         setLoadingCart(false);
       }
-    };
-
+    }
     fetchCart();
   }, [user?.id, showToast]);
 
@@ -76,104 +74,196 @@ export default function Checkout() {
   };
 
   const validateForm = () => {
-    const requiredFields = ['name', 'email', 'phone', 'street', 'city', 'state', 'pincode'];
-    for (const field of requiredFields) {
+    const required = ['name','email','phone','street','city','state','pincode'];
+    for (let field of required) {
       if (!formData[field]?.trim()) {
-        alert(`Please fill out the ${field} field.`);
+        showToast(`Please fill out the ${field} field.`, 'error');
         return false;
       }
     }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      showToast('Please enter a valid email address.', 'error');
+      return false;
+    }
+    
+    // Phone validation (10 digits)
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      showToast('Please enter a valid 10-digit phone number.', 'error');
+      return false;
+    }
+    
+    // Pincode validation (6 digits)
+    const pincodeRegex = /^[0-9]{6}$/;
+    if (!pincodeRegex.test(formData.pincode)) {
+      showToast('Please enter a valid 6-digit pincode.', 'error');
+      return false;
+    }
+    
     return true;
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = 0; // Adjust if needed
+  const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const shipping = 0;
   const total = subtotal + shipping;
+  const fmt = amt => new Intl.NumberFormat('en-IN',{ style:'currency',currency:'INR' }).format(amt);
 
-  const formatCurrency = amount =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+  // Clear cart after successful order
+  const clearCart = async () => {
+    try {
+      if (user?.id) {
+        // Clear database cart for logged-in users
+        await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id);
+      } else {
+        // Clear session storage for guests
+        sessionStorage.removeItem('guest_cart');
+      }
+      setCartItems([]);
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+    }
+  };
 
+  // Save contact & create order in Supabase
   const handleSaveContactInfo = async () => {
     if (!validateForm()) return;
+    
+    if (cartItems.length === 0) {
+      showToast('Your cart is empty. Add items before checkout.', 'error');
+      return;
+    }
+    
     setLoading(true);
     try {
-      const product_list = cartItems.map(item => ({
-        product_id: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-        unit_price: item.price,
+      const product_list = cartItems.map(i => ({
+        product_id: i.productId, 
+        name: i.name,
+        quantity: i.quantity, 
+        unit_price: i.price,
+        total_price: i.price * i.quantity
       }));
-
+      
       const { data, error } = await supabase
         .from('orders')
         .insert([{
           user_id: user?.id || null,
-          user_name: formData.name,
-          user_email: formData.email,
-          user_phone: formData.phone,
-          address_line: formData.street,
-          city: formData.city,
-          state: formData.state,
-          postal_code: formData.pincode,
+          user_name: formData.name.trim(),
+          user_email: formData.email.trim().toLowerCase(),
+          user_phone: formData.phone.trim(),
+          address_line: formData.street.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          postal_code: formData.pincode.trim(),
           product_list,
           total_amount: total,
           payment_status: 'PENDING',
           order_status: 'PROCESSING',
+          created_at: new Date().toISOString(),
         }])
         .select('id')
         .single();
-
+        
       if (error) throw error;
-
+      
       setSavedOrderId(data.id);
       setContactSaved(true);
       showToast('Contact info saved! You may now proceed to payment.', 'success');
     } catch (err) {
       console.error('Save contact info error:', err.message);
-      showToast('Failed to save contact info', 'error');
+      showToast('Failed to save contact info. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  // Listen for payment completion messages
+  useEffect(() => {
+    const handlePaymentMessage = (event) => {
+      // Only accept messages from CCAvenue or your domain
+      if (event.origin !== window.location.origin && !event.origin.includes('ccavenue.com')) {
+        return;
+      }
+      
+      if (event.data && event.data.type === 'PAYMENT_COMPLETE') {
+        const { success, orderId } = event.data;
+        
+        if (success && orderId === savedOrderId) {
+          clearCart();
+          showToast('Payment successful! Order placed successfully.', 'success');
+          navigate(`/order-confirmation/${orderId}`);
+        } else {
+          showToast('Payment failed. Please try again.', 'error');
+        }
+      }
+    };
+
+    window.addEventListener('message', handlePaymentMessage);
+    return () => window.removeEventListener('message', handlePaymentMessage);
+  }, [savedOrderId, navigate]);
+
+  // Initiate CCAvenue payment
   const handlePayment = async () => {
     if (!contactSaved || !savedOrderId) {
-      alert('Please submit your contact information first.');
+      showToast('Please submit your contact information first.', 'error');
+      return;
+    }
+
+    if (total <= 0) {
+      showToast('Invalid order amount.', 'error');
       return;
     }
 
     setLoading(true);
 
-    // Open the popup immediately to avoid popup blockers
-    const paymentWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!paymentWindow) {
-      alert('Popup blocked! Please allow popups to proceed with payment.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch(
-        `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/createOrder`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order_id: savedOrderId }),
+      const { data, error } = await supabase.functions.invoke('createOrder', {
+        body: { 
+          order_id: savedOrderId,
+          return_url: `${window.location.origin}/payment-success`,
+          cancel_url: `${window.location.origin}/payment-cancel`
         }
-      );
+      });
 
-      if (!res.ok) throw new Error('Failed to initiate payment with CCAvenue.');
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to initiate payment.');
+      }
 
-      const html = await res.text();
+      if (!data) {
+        throw new Error('No response from payment service.');
+      }
 
-      // Write the payment form HTML into the popup
-      paymentWindow.document.open();
-      paymentWindow.document.write(html);
-      paymentWindow.document.close();
+      // Create a form and submit it to redirect to CCAvenue
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.target = '_self'; // Use same window instead of popup
+      
+      // Add hidden fields
+      const encRequestInput = document.createElement('input');
+      encRequestInput.type = 'hidden';
+      encRequestInput.name = 'encRequest';
+      encRequestInput.value = data.encRequest;
+      form.appendChild(encRequestInput);
+      
+      const accessCodeInput = document.createElement('input');
+      accessCodeInput.type = 'hidden';
+      accessCodeInput.name = 'access_code';
+      accessCodeInput.value = data.access_code;
+      form.appendChild(accessCodeInput);
+      
+      document.body.appendChild(form);
+      form.submit();
+      
     } catch (err) {
-      console.error('CCAvenue payment error:', err);
-      alert('Payment initiation failed. Please try again.');
-      paymentWindow.close();
+      console.error('Payment initiation error:', err);
+      showToast(err.message || 'Payment initiation failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -184,21 +274,34 @@ export default function Checkout() {
       <div className="checkout-wrapper">
         <h1 className="checkout-title">Checkout</h1>
 
+        {/* Shipping Info */}
         <div className="checkout-card">
-          <h2 className="checkout-card-title">Shipping Information</h2>
+          <h2>Shipping Information</h2>
           <div className="checkout-card-body">
             {Object.keys(formData).map(field => (
               <div key={field} className="form-group">
-                <label className="form-label">
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                <label>
+                  {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                  {['name', 'email', 'phone', 'street', 'city', 'state', 'pincode'].includes(field) && ' *'}
                 </label>
                 <input
-                  type={field === 'email' ? 'email' : 'text'}
+                  type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
                   name={field}
                   value={formData[field]}
                   onChange={handleChange}
-                  className="form-input"
                   disabled={contactSaved}
+                  className="form-input"
+                  placeholder={
+                    field === 'phone' ? '10-digit mobile number' :
+                    field === 'pincode' ? '6-digit postal code' :
+                    field === 'email' ? 'your@email.com' :
+                    ''
+                  }
+                  maxLength={
+                    field === 'phone' ? '10' :
+                    field === 'pincode' ? '6' :
+                    undefined
+                  }
                 />
               </div>
             ))}
@@ -207,76 +310,64 @@ export default function Checkout() {
               disabled={loading || contactSaved}
               className={`btn btn-primary ${contactSaved ? 'btn-disabled' : ''}`}
             >
-              {contactSaved ? 'Contact Info Saved' : 'Submit Contact Info'}
+              {loading ? 'Saving...' : contactSaved ? 'Contact Info Saved ✓' : 'Submit Contact Info'}
             </button>
           </div>
         </div>
 
+        {/* Order Summary */}
         <div className="checkout-card">
-          <h2 className="checkout-card-title">Order Summary</h2>
+          <h2>Order Summary</h2>
           <div className="checkout-card-body">
             {loadingCart ? (
               <p>Loading cart…</p>
             ) : cartItems.length ? (
               <ul className="order-summary-list">
-                {cartItems.map(item => (
-                  <li key={item.id} className="order-summary-item">
+                {cartItems.map((item, index) => (
+                  <li key={item.id || index} className="order-summary-item">
                     <div className="order-item-details">
                       {item.image && (
                         <img src={item.image} alt={item.name} className="order-item-image" />
                       )}
                       <div>
-                        <div className="order-item-name">{item.name}</div>
-                        <div className="order-item-quantity">Qty: {item.quantity}</div>
+                        <div>{item.name}</div>
+                        <div>Qty: {item.quantity}</div>
                       </div>
                     </div>
-                    <div className="order-item-price">
-                      {formatCurrency(item.price * item.quantity)}
-                    </div>
+                    <div>{fmt(item.price * item.quantity)}</div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted">No items in cart</p>
+              <p>No items in cart</p>
             )}
             <div className="summary-row">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
+              <span>Subtotal</span><span>{fmt(subtotal)}</span>
             </div>
             <div className="summary-row">
-              <span>Shipping</span>
-              <span>{shipping === 0 ? 'Free' : formatCurrency(shipping)}</span>
+              <span>Shipping</span><span>{shipping === 0 ? 'Free' : fmt(shipping)}</span>
             </div>
             <div className="summary-row summary-row-total">
-              <strong>Total</strong>
-              <strong>{formatCurrency(total)}</strong>
+              <strong>Total</strong><strong>{fmt(total)}</strong>
             </div>
           </div>
         </div>
 
+        {/* Actions */}
         <div className="checkout-actions">
           <button onClick={() => navigate('/cart')} className="btn btn-outline">
             Return to Cart
           </button>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              onClick={handleSaveContactInfo}
-              disabled={loading || contactSaved}
-              className={`btn btn-primary ${contactSaved ? 'btn-disabled' : ''}`}
-            >
-              {contactSaved ? 'Contact Info Saved' : 'Submit Contact Info'}
-            </button>
-            <button
-              onClick={handlePayment}
-              disabled={!contactSaved || loading}
-              className="btn btn-success"
-            >
-              {loading ? 'Processing...' : 'Pay with CCAvenue'}
-            </button>
-          </div>
+          <button
+            onClick={handlePayment}
+            disabled={!contactSaved || loading || cartItems.length === 0}
+            className="btn btn-success"
+          >
+            {loading ? 'Processing...' : `Pay ${fmt(total)} with CCAvenue`}
+          </button>
         </div>
 
-        {/* Optional: Show invoice preview after contact info is saved */}
+        {/* Invoice Preview */}
         {contactSaved && savedOrderId && (
           <InvoiceGenerator
             orderId={savedOrderId}
