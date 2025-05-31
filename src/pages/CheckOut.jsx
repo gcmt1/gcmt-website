@@ -3,9 +3,8 @@ import { supabase } from '../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../components/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import '../styles/CheckOut.css';
 import InvoiceGenerator from '../components/InvoiceGenerator';
-import { getEncryptedOrder } from '../utils/ccaUtils';
+import '../styles/CheckOut.css';
 
 export default function Checkout() {
   const { user } = useAppContext();
@@ -27,7 +26,6 @@ export default function Checkout() {
     pincode: '',
   });
 
-  // Fetch cart (guest or logged-in)
   useEffect(() => {
     async function fetchCart() {
       setLoadingCart(true);
@@ -75,54 +73,41 @@ export default function Checkout() {
   };
 
   const validateForm = () => {
-    const required = ['name','email','phone','street','city','state','pincode'];
+    const required = ['name', 'email', 'phone', 'street', 'city', 'state', 'pincode'];
     for (let field of required) {
       if (!formData[field]?.trim()) {
         showToast(`Please fill out the ${field} field.`, 'error');
         return false;
       }
     }
-    
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       showToast('Please enter a valid email address.', 'error');
       return false;
     }
-    
-    // Phone validation (10 digits)
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(formData.phone)) {
       showToast('Please enter a valid 10-digit phone number.', 'error');
       return false;
     }
-    
-    // Pincode validation (6 digits)
     const pincodeRegex = /^[0-9]{6}$/;
     if (!pincodeRegex.test(formData.pincode)) {
       showToast('Please enter a valid 6-digit pincode.', 'error');
       return false;
     }
-    
     return true;
   };
 
   const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shipping = 0;
   const total = subtotal + shipping;
-  const fmt = amt => new Intl.NumberFormat('en-IN',{ style:'currency',currency:'INR' }).format(amt);
+  const fmt = amt => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
 
-  // Clear cart after successful order
   const clearCart = async () => {
     try {
       if (user?.id) {
-        // Clear database cart for logged-in users
-        await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id);
+        await supabase.from('cart_items').delete().eq('user_id', user.id);
       } else {
-        // Clear session storage for guests
         sessionStorage.removeItem('guest_cart');
       }
       setCartItems([]);
@@ -131,25 +116,24 @@ export default function Checkout() {
     }
   };
 
-  // Save contact & create order in Supabase
   const handleSaveContactInfo = async () => {
     if (!validateForm()) return;
-    
+
     if (cartItems.length === 0) {
       showToast('Your cart is empty. Add items before checkout.', 'error');
       return;
     }
-    
+
     setLoading(true);
     try {
       const product_list = cartItems.map(i => ({
-        product_id: i.productId, 
+        product_id: i.productId,
         name: i.name,
-        quantity: i.quantity, 
+        quantity: i.quantity,
         unit_price: i.price,
         total_price: i.price * i.quantity
       }));
-      
+
       const { data, error } = await supabase
         .from('orders')
         .insert([{
@@ -169,9 +153,9 @@ export default function Checkout() {
         }])
         .select('id')
         .single();
-        
+
       if (error) throw error;
-      
+
       setSavedOrderId(data.id);
       setContactSaved(true);
       showToast('Contact info saved! You may now proceed to payment.', 'success');
@@ -183,20 +167,68 @@ export default function Checkout() {
     }
   };
 
-  // Listen for payment completion messages
+  const handlePayment = async () => {
+    if (!savedOrderId) {
+      showToast('Please save contact info before proceeding to payment.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://your-vercel-project.vercel.app/api/createOrder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchant_id: '4311301',
+          order_id: `ORDER${savedOrderId}`,
+          amount: total.toFixed(2),
+          currency: 'INR',
+          redirect_url: 'https://your-site.com/payment-success',
+          cancel_url: 'https://your-site.com/payment-cancel',
+          language: 'EN',
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.encRequest || !result.access_code) {
+        showToast('Payment initiation failed.', 'error');
+        return;
+      }
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+
+      const encInput = document.createElement('input');
+      encInput.type = 'hidden';
+      encInput.name = 'encRequest';
+      encInput.value = result.encRequest;
+      form.appendChild(encInput);
+
+      const accessCodeInput = document.createElement('input');
+      accessCodeInput.type = 'hidden';
+      accessCodeInput.name = 'AVNS75ME47CK48SNKC';
+      accessCodeInput.value = result.access_code;
+      form.appendChild(accessCodeInput);
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      console.error('Payment error:', err);
+      showToast('Error initiating payment. Please try again.', 'error');
+    }
+  };
+
   useEffect(() => {
     const handlePaymentMessage = (event) => {
-      // Only accept messages from CCAvenue or your domain
       if (event.origin !== window.location.origin && !event.origin.includes('ccavenue.com')) {
         return;
       }
-      
+
       if (event.data && event.data.type === 'PAYMENT_COMPLETE') {
         const { success, orderId } = event.data;
-        
         if (success && orderId === savedOrderId) {
           clearCart();
-          showToast('Payment successful! Order placed successfully.', 'success');
+          showToast('Payment successful! Order placed.', 'success');
           navigate(`/order-confirmation/${orderId}`);
         } else {
           showToast('Payment failed. Please try again.', 'error');
@@ -207,42 +239,6 @@ export default function Checkout() {
     window.addEventListener('message', handlePaymentMessage);
     return () => window.removeEventListener('message', handlePaymentMessage);
   }, [savedOrderId, navigate]);
-
-  // Initiate CCAvenue payment
-const handlePayment = async () => {
-  const orderData = {
-    merchant_id: 'YOUR_MERCHANT_ID',
-    order_id: 'ORDER123',
-    amount: '100.00',
-    currency: 'INR',
-    redirect_url: 'https://your-site.com/payment-success',
-    cancel_url: 'https://your-site.com/payment-cancel',
-    language: 'EN',
-    working_key: 'YOUR_WORKING_KEY',
-  };
-
-  const encRequest = await getEncryptedOrder(orderData);
-
-  // Submit to CCAvenue
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = 'https://gcmtshop-cca-backend.vercel.app/api/creatOrder';
-
-  const encInput = document.createElement('input');
-  encInput.type = 'hidden';
-  encInput.name = 'encRequest';
-  encInput.value = encRequest;
-  form.appendChild(encInput);
-
-  const accessCodeInput = document.createElement('input');
-  accessCodeInput.type = 'hidden';
-  accessCodeInput.name = 'access_code';
-  accessCodeInput.value = 'YOUR_ACCESS_CODE'; // From CCAvenue Dashboard
-  form.appendChild(accessCodeInput);
-
-  document.body.appendChild(form);
-  form.submit();
-};
 
   return (
     <div className="checkout-container">
