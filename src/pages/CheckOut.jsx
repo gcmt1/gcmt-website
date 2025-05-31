@@ -226,7 +226,7 @@ const handlePayment = async () => {
   // Submit to CCAvenue
   const form = document.createElement('form');
   form.method = 'POST';
-  form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+  form.action = 'https://gcmtshop-cca-backend.vercel.app/api/creatOrder';
 
   const encInput = document.createElement('input');
   encInput.type = 'hidden';
