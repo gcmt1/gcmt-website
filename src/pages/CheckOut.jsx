@@ -26,6 +26,7 @@ export default function Checkout() {
     pincode: '',
   });
 
+  // Fetch cart (guest or logged-in)
   useEffect(() => {
     async function fetchCart() {
       setLoadingCart(true);
@@ -67,42 +68,54 @@ export default function Checkout() {
     fetchCart();
   }, [user?.id, showToast]);
 
-  const handleChange = e => {
+  // Handle form input changes
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Validate shipping/contact form
   const validateForm = () => {
-    const required = ['name', 'email', 'phone', 'street', 'city', 'state', 'pincode'];
-    for (let field of required) {
+    const requiredFields = ['name', 'email', 'phone', 'street', 'city', 'state', 'pincode'];
+    for (let field of requiredFields) {
       if (!formData[field]?.trim()) {
         showToast(`Please fill out the ${field} field.`, 'error');
         return false;
       }
     }
+
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       showToast('Please enter a valid email address.', 'error');
       return false;
     }
+
+    // Phone validation (10 digits)
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(formData.phone)) {
       showToast('Please enter a valid 10-digit phone number.', 'error');
       return false;
     }
+
+    // Pincode validation (6 digits)
     const pincodeRegex = /^[0-9]{6}$/;
     if (!pincodeRegex.test(formData.pincode)) {
       showToast('Please enter a valid 6-digit pincode.', 'error');
       return false;
     }
+
     return true;
   };
 
+  // Calculate totals
   const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shipping = 0;
   const total = subtotal + shipping;
-  const fmt = amt => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
+  const fmt = (amt) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
 
+  // Clear cart after successful payment
   const clearCart = async () => {
     try {
       if (user?.id) {
@@ -116,6 +129,7 @@ export default function Checkout() {
     }
   };
 
+  // Save contact info + create order record in Supabase
   const handleSaveContactInfo = async () => {
     if (!validateForm()) return;
 
@@ -126,31 +140,33 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const product_list = cartItems.map(i => ({
+      const product_list = cartItems.map((i) => ({
         product_id: i.productId,
         name: i.name,
         quantity: i.quantity,
         unit_price: i.price,
-        total_price: i.price * i.quantity
+        total_price: i.price * i.quantity,
       }));
 
       const { data, error } = await supabase
         .from('orders')
-        .insert([{
-          user_id: user?.id || null,
-          user_name: formData.name.trim(),
-          user_email: formData.email.trim().toLowerCase(),
-          user_phone: formData.phone.trim(),
-          address_line: formData.street.trim(),
-          city: formData.city.trim(),
-          state: formData.state.trim(),
-          postal_code: formData.pincode.trim(),
-          product_list,
-          total_amount: total,
-          payment_status: 'PENDING',
-          order_status: 'PROCESSING',
-          created_at: new Date().toISOString(),
-        }])
+        .insert([
+          {
+            user_id: user?.id || null,
+            user_name: formData.name.trim(),
+            user_email: formData.email.trim().toLowerCase(),
+            user_phone: formData.phone.trim(),
+            address_line: formData.street.trim(),
+            city: formData.city.trim(),
+            state: formData.state.trim(),
+            postal_code: formData.pincode.trim(),
+            product_list,
+            total_amount: total,
+            payment_status: 'PENDING',
+            order_status: 'PROCESSING',
+            created_at: new Date().toISOString(),
+          },
+        ])
         .select('id')
         .single();
 
@@ -167,6 +183,7 @@ export default function Checkout() {
     }
   };
 
+  // Initiate CCAvenue payment
   const handlePayment = async () => {
     if (!savedOrderId) {
       showToast('Please save contact info before proceeding to payment.', 'error');
@@ -174,7 +191,8 @@ export default function Checkout() {
     }
 
     try {
-      const response = await fetch('https://your-vercel-project.vercel.app/api/createOrder', {
+      // 🔑 NOTE: Use a *relative* path here so it goes to the same domain (`gcmtshop.com`)
+      const response = await fetch('/api/createOrder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,32 +200,41 @@ export default function Checkout() {
           order_id: `ORDER${savedOrderId}`,
           amount: total.toFixed(2),
           currency: 'INR',
-          redirect_url: 'https://your-site.com/payment-success',
-          cancel_url: 'https://your-site.com/payment-cancel',
+          redirect_url: 'https://gcmtshop.com/payment-success',
+          cancel_url: 'https://gcmtshop.com/payment-cancel',
           language: 'EN',
         }),
       });
 
-      const result = await response.json();
-      if (!result.encRequest || !result.access_code) {
-        showToast('Payment initiation failed.', 'error');
+      if (!response.ok) {
+        showToast('Payment initiation failed (network error).', 'error');
         return;
       }
 
+      const result = await response.json();
+      if (!result.encRequest) {
+        showToast('Payment initiation failed (invalid response).', 'error');
+        return;
+      }
+
+      // Build a form and submit to CCAvenue
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.action =
+        'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
 
+      // 1) encRequest (from your backend)
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
       encInput.name = 'encRequest';
       encInput.value = result.encRequest;
       form.appendChild(encInput);
 
+      // 2) access_code (your actual CCAvenue access code)
       const accessCodeInput = document.createElement('input');
       accessCodeInput.type = 'hidden';
-      accessCodeInput.name = 'AVNS75ME47CK48SNKC';
-      accessCodeInput.value = result.access_code;
+      accessCodeInput.name = 'access_code';
+      accessCodeInput.value = 'AVNS75ME47CK48SNKC'; // 🔑 Replace with your real Access Code
       form.appendChild(accessCodeInput);
 
       document.body.appendChild(form);
@@ -218,9 +245,14 @@ export default function Checkout() {
     }
   };
 
+  // Listen for payment completion messages (if using postMessage from a popup/iframe)
   useEffect(() => {
     const handlePaymentMessage = (event) => {
-      if (event.origin !== window.location.origin && !event.origin.includes('ccavenue.com')) {
+      // Only accept messages from your domain or CCAvenue
+      if (
+        event.origin !== window.location.origin &&
+        !event.origin.includes('ccavenue.com')
+      ) {
         return;
       }
 
@@ -249,29 +281,49 @@ export default function Checkout() {
         <div className="checkout-card">
           <h2>Shipping Information</h2>
           <div className="checkout-card-body">
-            {Object.keys(formData).map(field => (
+            {Object.keys(formData).map((field) => (
               <div key={field} className="form-group">
                 <label>
-                  {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
-                  {['name', 'email', 'phone', 'street', 'city', 'state', 'pincode'].includes(field) && ' *'}
+                  {field.charAt(0).toUpperCase() +
+                    field.slice(1).replace(/([A-Z])/g, ' $1')}
+                  {[
+                    'name',
+                    'email',
+                    'phone',
+                    'street',
+                    'city',
+                    'state',
+                    'pincode',
+                  ].includes(field) && ' *'}
                 </label>
                 <input
-                  type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
+                  type={
+                    field === 'email'
+                      ? 'email'
+                      : field === 'phone'
+                      ? 'tel'
+                      : 'text'
+                  }
                   name={field}
                   value={formData[field]}
                   onChange={handleChange}
                   disabled={contactSaved}
                   className="form-input"
                   placeholder={
-                    field === 'phone' ? '10-digit mobile number' :
-                    field === 'pincode' ? '6-digit postal code' :
-                    field === 'email' ? 'your@email.com' :
-                    ''
+                    field === 'phone'
+                      ? '10-digit mobile number'
+                      : field === 'pincode'
+                      ? '6-digit postal code'
+                      : field === 'email'
+                      ? 'your@email.com'
+                      : ''
                   }
                   maxLength={
-                    field === 'phone' ? '10' :
-                    field === 'pincode' ? '6' :
-                    undefined
+                    field === 'phone'
+                      ? '10'
+                      : field === 'pincode'
+                      ? '6'
+                      : undefined
                   }
                 />
               </div>
@@ -279,9 +331,15 @@ export default function Checkout() {
             <button
               onClick={handleSaveContactInfo}
               disabled={loading || contactSaved}
-              className={`btn btn-primary ${contactSaved ? 'btn-disabled' : ''}`}
+              className={`btn btn-primary ${
+                contactSaved ? 'btn-disabled' : ''
+              }`}
             >
-              {loading ? 'Saving...' : contactSaved ? 'Contact Info Saved ✓' : 'Submit Contact Info'}
+              {loading
+                ? 'Saving...'
+                : contactSaved
+                ? 'Contact Info Saved ✓'
+                : 'Submit Contact Info'}
             </button>
           </div>
         </div>
@@ -295,10 +353,17 @@ export default function Checkout() {
             ) : cartItems.length ? (
               <ul className="order-summary-list">
                 {cartItems.map((item, index) => (
-                  <li key={item.id || index} className="order-summary-item">
+                  <li
+                    key={item.id || index}
+                    className="order-summary-item"
+                  >
                     <div className="order-item-details">
                       {item.image && (
-                        <img src={item.image} alt={item.name} className="order-item-image" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="order-item-image"
+                        />
                       )}
                       <div>
                         <div>{item.name}</div>
@@ -313,25 +378,33 @@ export default function Checkout() {
               <p>No items in cart</p>
             )}
             <div className="summary-row">
-              <span>Subtotal</span><span>{fmt(subtotal)}</span>
+              <span>Subtotal</span>
+              <span>{fmt(subtotal)}</span>
             </div>
             <div className="summary-row">
-              <span>Shipping</span><span>{shipping === 0 ? 'Free' : fmt(shipping)}</span>
+              <span>Shipping</span>
+              <span>{shipping === 0 ? 'Free' : fmt(shipping)}</span>
             </div>
             <div className="summary-row summary-row-total">
-              <strong>Total</strong><strong>{fmt(total)}</strong>
+              <strong>Total</strong>
+              <strong>{fmt(total)}</strong>
             </div>
           </div>
         </div>
 
         {/* Actions */}
         <div className="checkout-actions">
-          <button onClick={() => navigate('/cart')} className="btn btn-outline">
+          <button
+            onClick={() => navigate('/cart')}
+            className="btn btn-outline"
+          >
             Return to Cart
           </button>
           <button
             onClick={handlePayment}
-            disabled={!contactSaved || loading || cartItems.length === 0}
+            disabled={
+              !contactSaved || loading || cartItems.length === 0
+            }
             className="btn btn-success"
           >
             {loading ? 'Processing...' : `Pay ${fmt(total)} with CCAvenue`}
