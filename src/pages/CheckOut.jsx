@@ -5,6 +5,7 @@ import { useToast } from '../components/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/CheckOut.css';
 import InvoiceGenerator from '../components/InvoiceGenerator';
+import { getEncryptedOrder } from './utils/ccaUtils';
 
 export default function Checkout() {
   const { user } = useAppContext();
@@ -208,66 +209,40 @@ export default function Checkout() {
   }, [savedOrderId, navigate]);
 
   // Initiate CCAvenue payment
-  const handlePayment = async () => {
-    if (!contactSaved || !savedOrderId) {
-      showToast('Please submit your contact information first.', 'error');
-      return;
-    }
-
-    if (total <= 0) {
-      showToast('Invalid order amount.', 'error');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('createOrder', {
-        body: { 
-          order_id: savedOrderId,
-          return_url: `${window.location.origin}#/payment-success`,
-          cancel_url: `${window.location.origin}#/payment-cancel`
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to initiate payment.');
-      }
-
-      if (!data) {
-        throw new Error('No response from payment service.');
-      }
-
-      // Create a form and submit it to redirect to CCAvenue
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-      form.target = '_self'; // Use same window instead of popup
-      
-      // Add hidden fields
-      const encRequestInput = document.createElement('input');
-      encRequestInput.type = 'hidden';
-      encRequestInput.name = 'encRequest';
-      encRequestInput.value = data.encRequest;
-      form.appendChild(encRequestInput);
-      
-      const accessCodeInput = document.createElement('input');
-      accessCodeInput.type = 'hidden';
-      accessCodeInput.name = 'access_code';
-      accessCodeInput.value = data.access_code;
-      form.appendChild(accessCodeInput);
-      
-      document.body.appendChild(form);
-      form.submit();
-      
-    } catch (err) {
-      console.error('Payment initiation error:', err);
-      showToast(err.message || 'Payment initiation failed. Please try again.', 'error');
-    } finally {
-      setLoading(false);
-    }
+const handlePayment = async () => {
+  const orderData = {
+    merchant_id: 'YOUR_MERCHANT_ID',
+    order_id: 'ORDER123',
+    amount: '100.00',
+    currency: 'INR',
+    redirect_url: 'https://your-site.com/payment-success',
+    cancel_url: 'https://your-site.com/payment-cancel',
+    language: 'EN',
+    working_key: 'YOUR_WORKING_KEY',
   };
+
+  const encRequest = await getEncryptedOrder(orderData);
+
+  // Submit to CCAvenue
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+
+  const encInput = document.createElement('input');
+  encInput.type = 'hidden';
+  encInput.name = 'encRequest';
+  encInput.value = encRequest;
+  form.appendChild(encInput);
+
+  const accessCodeInput = document.createElement('input');
+  accessCodeInput.type = 'hidden';
+  accessCodeInput.name = 'access_code';
+  accessCodeInput.value = 'YOUR_ACCESS_CODE'; // From CCAvenue Dashboard
+  form.appendChild(accessCodeInput);
+
+  document.body.appendChild(form);
+  form.submit();
+};
 
   return (
     <div className="checkout-container">
