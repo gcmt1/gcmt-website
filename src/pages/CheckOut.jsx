@@ -192,7 +192,7 @@ export default function Checkout() {
 
     try {
       // 🔑 NOTE: Use a *relative* path here so it goes to the same domain (`gcmtshop.com`)
-      const response = await fetch('/api/createOrder', {
+      const response = await fetch('https://gcmtshop.com/api/createOrder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
