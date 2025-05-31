@@ -5,7 +5,7 @@ import { useToast } from '../components/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/CheckOut.css';
 import InvoiceGenerator from '../components/InvoiceGenerator';
-import { getEncryptedOrder } from './utils/ccaUtils';
+import { getEncryptedOrder } from '../utils/ccaUtils';
 
 export default function Checkout() {
   const { user } = useAppContext();
