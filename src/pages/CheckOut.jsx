@@ -183,7 +183,7 @@ export default function Checkout() {
     }
   };
 
-  // Initiate CCAvenue payment with enhanced debugging
+  // Initiate CCAvenue payment with proper form handling
   const handlePayment = async () => {
     if (!savedOrderId) {
       showToast('Please save contact info before proceeding to payment.', 'error');
@@ -200,6 +200,21 @@ export default function Checkout() {
         redirect_url: 'https://gcmtshop.com/payment-success',
         cancel_url: 'https://gcmtshop.com/payment-cancel',
         language: 'EN',
+        billing_name: formData.name.trim(),
+        billing_address: formData.street.trim(),
+        billing_city: formData.city.trim(),
+        billing_state: formData.state.trim(),
+        billing_zip: formData.pincode.trim(),
+        billing_country: 'India',
+        billing_tel: formData.phone.trim(),
+        billing_email: formData.email.trim().toLowerCase(),
+        delivery_name: formData.name.trim(),
+        delivery_address: formData.street.trim(),
+        delivery_city: formData.city.trim(),
+        delivery_state: formData.state.trim(),
+        delivery_zip: formData.pincode.trim(),
+        delivery_country: 'India',
+        delivery_tel: formData.phone.trim(),
       };
 
       console.log('🚀 Sending payment request:', requestBody);
@@ -214,8 +229,7 @@ export default function Checkout() {
       });
 
       console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Backend error response:', errorText);
@@ -239,43 +253,9 @@ export default function Checkout() {
       }
 
       console.log('🔐 encRequest length:', result.encRequest.length);
-      console.log('🔐 encRequest (first 50 chars):', result.encRequest.substring(0, 50) + '...');
 
-      // Build and submit form to CCAvenue
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-      form.style.display = 'none'; // Hide the form
-
-      // Add encRequest
-      const encInput = document.createElement('input');
-      encInput.type = 'hidden';
-      encInput.name = 'encRequest';
-      encInput.value = result.encRequest;
-      form.appendChild(encInput);
-
-      // Add access_code
-      const accessCodeInput = document.createElement('input');
-      accessCodeInput.type = 'hidden';
-      accessCodeInput.name = 'access_code';
-      accessCodeInput.value = 'AVNS75ME47CK48SNKC';
-      form.appendChild(accessCodeInput);
-
-      console.log('🔑 Access Code:', 'AVNS75ME47CK48SNKC');
-      console.log('📝 Form action:', form.action);
-
-      // Append form to body and submit
-      document.body.appendChild(form);
-      
-      console.log('🚀 Submitting form to CCAvenue...');
-      form.submit();
-
-      // Clean up form after submission
-      setTimeout(() => {
-        if (document.body.contains(form)) {
-          document.body.removeChild(form);
-        }
-      }, 1000);
+      // Create and submit form to CCAvenue using proper method
+      submitToCCAvenue(result.encRequest);
 
     } catch (err) {
       console.error('💥 Payment error:', err);
@@ -283,6 +263,52 @@ export default function Checkout() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Separate function to handle CCAvenue form submission
+  const submitToCCAvenue = (encRequest) => {
+    console.log('🚀 Submitting to CCAvenue...');
+    
+    // Create form element
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+    form.target = '_self'; // Stay in same window
+    
+    // Add encRequest input
+    const encInput = document.createElement('input');
+    encInput.type = 'hidden';
+    encInput.name = 'encRequest';
+    encInput.value = encRequest;
+    form.appendChild(encInput);
+    
+    // Add access_code input
+    const accessCodeInput = document.createElement('input');
+    accessCodeInput.type = 'hidden';
+    accessCodeInput.name = 'access_code';
+    accessCodeInput.value = 'AVNS75ME47CK48SNKC';
+    form.appendChild(accessCodeInput);
+    
+    console.log('📝 Form details:');
+    console.log('  Action:', form.action);
+    console.log('  Method:', form.method);
+    console.log('  encRequest length:', encRequest.length);
+    console.log('  Access Code:', 'AVNS75ME47CK48SNKC');
+    
+    // Append to body and submit
+    document.body.appendChild(form);
+    
+    // Small delay to ensure form is fully attached
+    setTimeout(() => {
+      form.submit();
+    }, 100);
+    
+    // Clean up after a delay
+    setTimeout(() => {
+      if (document.body.contains(form)) {
+        document.body.removeChild(form);
+      }
+    }, 2000);
   };
 
   // Listen for payment completion messages
