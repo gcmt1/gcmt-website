@@ -183,81 +183,126 @@ export default function Checkout() {
     }
   };
 
-  // Initiate CCAvenue payment
+  // Initiate CCAvenue payment with enhanced debugging
   const handlePayment = async () => {
     if (!savedOrderId) {
       showToast('Please save contact info before proceeding to payment.', 'error');
       return;
     }
 
+    setLoading(true);
     try {
-      // 🔑 NOTE: Use a *relative* path here so it goes to the same domain (`gcmtshop.com`)
+      const requestBody = {
+        merchant_id: '4311301',
+        order_id: `ORDER${savedOrderId}`,
+        amount: total.toFixed(2),
+        currency: 'INR',
+        redirect_url: 'https://gcmtshop.com/payment-success',
+        cancel_url: 'https://gcmtshop.com/payment-cancel',
+        language: 'EN',
+      };
+
+      console.log('🚀 Sending payment request:', requestBody);
+
       const response = await fetch('https://gcmtshop-cca-backend.vercel.app/api/createOrder', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          merchant_id: '4311301',
-          order_id: `ORDER${savedOrderId}`,
-          amount: total.toFixed(2),
-          currency: 'INR',
-          redirect_url: 'https://gcmtshop.com/payment-success',
-          cancel_url: 'https://gcmtshop.com/payment-cancel',
-          language: 'EN',
-        }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        showToast('Payment initiation failed (network error).', 'error');
+        const errorText = await response.text();
+        console.error('❌ Backend error response:', errorText);
+        showToast(`Payment initiation failed: ${response.status} ${response.statusText}`, 'error');
         return;
       }
 
       const result = await response.json();
+      console.log('✅ Backend response:', result);
+
       if (!result.encRequest) {
-        showToast('Payment initiation failed (invalid response).', 'error');
+        console.error('❌ Missing encRequest in response:', result);
+        showToast('Payment initiation failed - missing encrypted request.', 'error');
         return;
       }
 
-      // Build a form and submit to CCAvenue
+      if (result.encRequest.length === 0) {
+        console.error('❌ Empty encRequest received');
+        showToast('Payment initiation failed - empty encrypted request.', 'error');
+        return;
+      }
+
+      console.log('🔐 encRequest length:', result.encRequest.length);
+      console.log('🔐 encRequest (first 50 chars):', result.encRequest.substring(0, 50) + '...');
+
+      // Build and submit form to CCAvenue
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action =
-        'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.style.display = 'none'; // Hide the form
 
-      // 1) encRequest (from your backend)
+      // Add encRequest
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
       encInput.name = 'encRequest';
       encInput.value = result.encRequest;
       form.appendChild(encInput);
 
-      // 2) access_code (your actual CCAvenue access code)
+      // Add access_code
       const accessCodeInput = document.createElement('input');
       accessCodeInput.type = 'hidden';
       accessCodeInput.name = 'access_code';
-      accessCodeInput.value = 'AVNS75ME47CK48SNKC'; // 🔑 Replace with your real Access Code
+      accessCodeInput.value = 'AVNS75ME47CK48SNKC';
       form.appendChild(accessCodeInput);
 
+      console.log('🔑 Access Code:', 'AVNS75ME47CK48SNKC');
+      console.log('📝 Form action:', form.action);
+
+      // Append form to body and submit
       document.body.appendChild(form);
+      
+      console.log('🚀 Submitting form to CCAvenue...');
       form.submit();
+
+      // Clean up form after submission
+      setTimeout(() => {
+        if (document.body.contains(form)) {
+          document.body.removeChild(form);
+        }
+      }, 1000);
+
     } catch (err) {
-      console.error('Payment error:', err);
+      console.error('💥 Payment error:', err);
       showToast('Error initiating payment. Please try again.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Listen for payment completion messages (if using postMessage from a popup/iframe)
+  // Listen for payment completion messages
   useEffect(() => {
     const handlePaymentMessage = (event) => {
+      console.log('📨 Received message:', event);
+      
       // Only accept messages from your domain or CCAvenue
       if (
         event.origin !== window.location.origin &&
         !event.origin.includes('ccavenue.com')
       ) {
+        console.log('🚫 Rejected message from:', event.origin);
         return;
       }
 
       if (event.data && event.data.type === 'PAYMENT_COMPLETE') {
         const { success, orderId } = event.data;
+        console.log('💳 Payment complete:', { success, orderId, savedOrderId });
+        
         if (success && orderId === savedOrderId) {
           clearCart();
           showToast('Payment successful! Order placed.', 'success');
@@ -270,7 +315,7 @@ export default function Checkout() {
 
     window.addEventListener('message', handlePaymentMessage);
     return () => window.removeEventListener('message', handlePaymentMessage);
-  }, [savedOrderId, navigate]);
+  }, [savedOrderId, navigate, showToast, clearCart]);
 
   return (
     <div className="checkout-container">
