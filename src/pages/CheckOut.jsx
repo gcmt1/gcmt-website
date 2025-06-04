@@ -241,6 +241,9 @@ export default function Checkout() {
       const result = await response.json();
       console.log('✅ Backend response:', result);
 
+      // Save debug info to localStorage
+      localStorage.setItem('ccavenue_debug', JSON.stringify({ requestBody, backendResponse: result }));
+
       if (!result.encRequest || typeof result.encRequest !== 'string' || result.encRequest.trim().length === 0) {
         throw new Error('Invalid or empty encrypted request received from backend');
       }
@@ -257,6 +260,7 @@ export default function Checkout() {
       setLoading(false);
     }
   };
+
 
   // FIXED: Simplified and more reliable CCAvenue form submission
 const submitToCCAvenue = (encRequest, accessCode) => {
