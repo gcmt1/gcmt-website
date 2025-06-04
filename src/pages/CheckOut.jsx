@@ -183,7 +183,7 @@ export default function Checkout() {
     }
   };
 
-  // FIXED: Improved CCAvenue payment initiation with hardcoded values for testing
+  // FIXED: Improved CCAvenue payment initiation
   const handlePayment = async () => {
     if (!savedOrderId) {
       showToast('Please save contact info before proceeding to payment.', 'error');
@@ -191,25 +191,23 @@ export default function Checkout() {
     }
 
     setLoading(true);
-    let result; // Make result accessible in catch block
     try {
-      // Ensure proper order ID format - make it simpler for testing
-      const orderId = `ORD${savedOrderId}${Date.now().toString().slice(-6)}`;
+      // Create a simple, unique order ID
+      const orderId = `ORD${savedOrderId}_${Date.now()}`;
       
-      // HARDCODED VALUES FOR TESTING - Replace with your actual credentials
-      const MERCHANT_ID = '4311301'; // Your actual merchant ID
-      const ACCESS_CODE = 'AVNS75ME47CK48SNKC'; // Your actual access code
-      // NOTE: Working key should be in your backend, not here
+      const MERCHANT_ID = '4311301';
+      const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
       
+      // Simplified request body matching your Postman test
       const requestBody = {
         merchant_id: MERCHANT_ID,
         order_id: orderId,
         amount: total.toFixed(2),
         currency: 'INR',
-        // Use hardcoded URLs for testing - replace with your actual domain
         redirect_url: 'https://gcmtshop.com/payment-success',
         cancel_url: 'https://gcmtshop.com/payment-cancel',
         language: 'EN',
+        // Add essential billing info (CCAvenue often requires these)
         billing_name: formData.name.trim(),
         billing_address: formData.street.trim(),
         billing_city: formData.city.trim(),
@@ -218,238 +216,112 @@ export default function Checkout() {
         billing_country: 'India',
         billing_tel: formData.phone.trim(),
         billing_email: formData.email.trim().toLowerCase(),
-        delivery_name: formData.name.trim(),
-        delivery_address: formData.street.trim(),
-        delivery_city: formData.city.trim(),
-        delivery_state: formData.state.trim(),
-        delivery_zip: formData.pincode.trim(),
-        delivery_country: 'India',
-        delivery_tel: formData.phone.trim(),
-        // Simplified merchant parameters
+        // Keep merchant params simple
         merchant_param1: savedOrderId.toString(),
-        merchant_param2: 'test_transaction',
-        merchant_param3: new Date().toISOString(),
       };
 
-      console.log('🚀 Sending payment request with hardcoded values:', requestBody);
+      console.log('🚀 Payment request:', requestBody);
 
-      // Try direct backend call first with detailed logging
-      console.log('📡 Making request to backend...');
       const response = await fetch('https://gcmtshop-cca-backend.vercel.app/api/createOrder', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (compatible; GCMT-Shop/1.0)',
         },
         body: JSON.stringify(requestBody),
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-      
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Backend error response:', errorText);
-        
-        // Try to parse error as JSON if possible
-        try {
-          const errorJson = JSON.parse(errorText);
-          console.error('❌ Parsed error:', errorJson);
-        } catch {
-          console.error('❌ Raw error text:', errorText);
-        }
-        
-        throw new Error(`Backend error: ${response.status} ${response.statusText}`);
+        console.error('❌ Backend error:', errorText);
+        throw new Error(`Backend error: ${response.status} - ${errorText}`);
       }
 
-      result = await response.json();
+      const result = await response.json();
       console.log('✅ Backend response:', result);
 
-      // ENHANCED validation with more specific checks
-      if (!result) {
-        throw new Error('Empty response from backend');
-      }
-      
-      if (!result.encRequest) {
-        console.error('❌ No encRequest in response:', result);
-        throw new Error('No encrypted request in backend response');
-      }
-      
-      if (typeof result.encRequest !== 'string') {
-        console.error('❌ encRequest is not a string:', typeof result.encRequest, result.encRequest);
-        throw new Error('Encrypted request is not a string');
-      }
-      
-      if (result.encRequest.trim().length === 0) {
-        console.error('❌ Empty encRequest received');
-        throw new Error('Empty encrypted request received');
+      if (!result.encRequest || typeof result.encRequest !== 'string' || result.encRequest.trim().length === 0) {
+        throw new Error('Invalid or empty encrypted request received from backend');
       }
 
-      // Check for common encryption issues
-      if (result.encRequest.includes('error') || result.encRequest.includes('Error')) {
-        console.error('❌ Error in encRequest:', result.encRequest);
-        throw new Error('Backend returned error in encrypted request');
-      }
+      console.log('🔐 Encrypted request length:', result.encRequest.length);
 
-      console.log('🔐 encRequest validation passed:');
-      console.log('  Length:', result.encRequest.length);
-      console.log('  First 100 chars:', result.encRequest.substring(0, 100));
-      console.log('  Last 50 chars:', result.encRequest.substring(result.encRequest.length - 50));
-
-      // Submit to CCAvenue with hardcoded access code
-      await submitToCCAvenue(result.encRequest, orderId, 'AVNS75ME47CK48SNKC');
+      // Submit to CCAvenue
+      await submitToCCAvenue(result.encRequest, ACCESS_CODE);
 
     } catch (err) {
       console.error('💥 Payment error:', err);
       showToast(`Payment initiation failed: ${err.message}`, 'error');
-      
-      // Fallback option - show manual form for debugging
-      if (err.message.includes('Form submission')) {
-        console.log('🔄 Offering manual form submission as fallback...');
-        showManualSubmissionForm(result?.encRequest, 'AVNS75ME47CK48SNKC');
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Fallback: Manual form submission for debugging
-  const showManualSubmissionForm = (encRequest, accessCode) => {
-    if (!encRequest) return;
-    
-    const fallbackContainer = document.createElement('div');
-    fallbackContainer.innerHTML = `
-      <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                  background: white; padding: 20px; border: 2px solid #ccc; z-index: 10000;">
-        <h3>Manual CCAvenue Submission (Debug Mode)</h3>
-        <p>Automatic submission failed. Click below to proceed manually:</p>
-        <form method="POST" action="https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction" target="_blank">
-          <input type="hidden" name="encRequest" value="${encRequest}" />
-          <input type="hidden" name="access_code" value="${accessCode}" />
-          <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
-            Proceed to CCAvenue
-          </button>
-          <button type="button" onclick="this.parentElement.parentElement.remove()" 
-                  style="padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer; margin-left: 10px;">
-            Cancel
-          </button>
-        </form>
-        <small>Debug Info: encRequest length = ${encRequest.length}</small>
-      </div>
-    `;
-    document.body.appendChild(fallbackContainer);
-  };
-
-  // FIXED: Enhanced CCAvenue form submission with proper encoding
-  const submitToCCAvenue = (encRequest, orderId, accessCode) => {
+  // FIXED: Simplified and more reliable CCAvenue form submission
+  const submitToCCAvenue = (encRequest, accessCode) => {
     return new Promise((resolve, reject) => {
-      console.log('🚀 Submitting to CCAvenue with valid encRequest...');
-      
       try {
-        // Validate the encrypted request format
-        if (!encRequest || typeof encRequest !== 'string') {
-          throw new Error('Invalid encrypted request for submission');
+        console.log('🚀 Submitting to CCAvenue...');
+        
+        // Clean up any existing forms
+        const existingForms = document.querySelectorAll('form[data-ccavenue-form="true"]');
+        existingForms.forEach(form => form.remove());
+
+        // Create form element
+        const form = document.createElement('form');
+        form.setAttribute('data-ccavenue-form', 'true');
+        form.method = 'post';
+        form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+        form.style.display = 'none';
+        
+        // Create encRequest input - ensure no whitespace issues
+        const encRequestInput = document.createElement('input');
+        encRequestInput.type = 'hidden';
+        encRequestInput.name = 'encRequest';
+        encRequestInput.value = encRequest.trim(); // Trim any whitespace
+        
+        // Create access_code input
+        const accessCodeInput = document.createElement('input');
+        accessCodeInput.type = 'hidden';
+        accessCodeInput.name = 'access_code';
+        accessCodeInput.value = accessCode.trim();
+        
+        // Append inputs to form
+        form.appendChild(encRequestInput);
+        form.appendChild(accessCodeInput);
+        
+        // Append form to body
+        document.body.appendChild(form);
+        
+        console.log('📝 Form details:');
+        console.log('  Action:', form.action);
+        console.log('  Method:', form.method);
+        console.log('  encRequest length:', encRequestInput.value.length);
+        console.log('  access_code:', accessCodeInput.value);
+        
+        // Submit form
+        form.submit();
+        console.log('✅ Form submitted to CCAvenue');
+        
+        // Update UI
+        const payButton = document.querySelector('.btn-success');
+        if (payButton) {
+          payButton.textContent = 'Redirecting to CCAvenue...';
+          payButton.disabled = true;
         }
-
-        if (!accessCode || typeof accessCode !== 'string') {
-          throw new Error('Invalid access code for submission');
-        }
-
-        // Use the encrypted request exactly as received (don't clean it)
-        console.log('🔐 Using encRequest exactly as received:');
-        console.log('  Length:', encRequest.length);
-        console.log('  First 50 chars:', encRequest.substring(0, 50));
-
-        // Create a more robust form submission
-        const submitForm = () => {
-          // Remove any existing forms first
-          const existingForms = document.querySelectorAll('form[data-ccavenue="true"]');
-          existingForms.forEach(form => form.remove());
-
-          // Create new form
-          const form = document.createElement('form');
-          form.setAttribute('data-ccavenue', 'true');
-          form.method = 'POST';  // CCAvenue prefers uppercase
-          form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-          form.acceptCharset = 'UTF-8';
-          form.enctype = 'application/x-www-form-urlencoded';
-          form.style.display = 'none';
-          
-          // Create encRequest input
-          const encInput = document.createElement('input');
-          encInput.type = 'hidden';
-          encInput.name = 'encRequest';
-          encInput.value = encRequest; // Use exactly as received
-          form.appendChild(encInput);
-          
-          // Create access_code input
-          const accessCodeInput = document.createElement('input');
-          accessCodeInput.type = 'hidden';
-          accessCodeInput.name = 'access_code';
-          accessCodeInput.value = accessCode;
-          form.appendChild(accessCodeInput);
-          
-          console.log('📝 Form created with:');
-          console.log('  Action:', form.action);
-          console.log('  Method:', form.method);
-          console.log('  Encoding:', form.enctype);
-          console.log('  encRequest length:', encInput.value.length);
-          console.log('  access_code:', accessCodeInput.value);
-          
-          // Append to document body
-          document.body.appendChild(form);
-          
-          // Validate form before submission
-          const isValid = form.checkValidity();
-          console.log('📋 Form validation result:', isValid);
-          
-          // Log all form data
-          console.log('📋 Form data being submitted:');
-          const formData = new FormData(form);
-          for (let [key, value] of formData.entries()) {
-            if (key === 'encRequest') {
-              console.log(`  ${key}: [${value.length} chars] ${value.substring(0, 30)}...`);
-            } else {
-              console.log(`  ${key}: ${value}`);
-            }
+        
+        // Clean up after delay
+        setTimeout(() => {
+          const formToRemove = document.querySelector('form[data-ccavenue-form="true"]');
+          if (formToRemove && document.body.contains(formToRemove)) {
+            document.body.removeChild(formToRemove);
           }
-          
-          // Submit the form
-          console.log('🚀 Submitting form to CCAvenue now...');
-          
-          try {
-            form.submit();
-            console.log('✅ Form submitted successfully to CCAvenue');
-            
-            // Show user feedback
-            const submitButton = document.querySelector('.btn-success');
-            if (submitButton) {
-              submitButton.textContent = 'Redirecting to CCAvenue...';
-              submitButton.disabled = true;
-            }
-            
-            resolve();
-          } catch (submitError) {
-            console.error('❌ Form submission failed:', submitError);
-            reject(submitError);
-          }
-          
-          // Cleanup after a longer delay
-          setTimeout(() => {
-            const formToRemove = document.querySelector('form[data-ccavenue="true"]');
-            if (formToRemove && document.body.contains(formToRemove)) {
-              document.body.removeChild(formToRemove);
-              console.log('🧹 Form cleaned up');
-            }
-          }, 15000);
-        };
-
-        // Execute form submission immediately
-        submitForm();
+        }, 5000);
+        
+        resolve();
         
       } catch (error) {
-        console.error('❌ Form preparation error:', error);
+        console.error('❌ Form submission error:', error);
         reject(error);
       }
     });
