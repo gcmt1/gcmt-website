@@ -300,8 +300,8 @@ const submitToCCAvenue = (encRequest, accessCode) => {
 
       debugger; // Use this to pause and inspect the form before submission
       form.submit();
-      resolve();
-
+      console.log('✅ Form submitted to CCAvenue successfully.');
+      
     } catch (error) {
       console.error('❌ Error submitting to CCAvenue:', error);
       reject(error);
