@@ -298,6 +298,7 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       console.log("encRequest length:", encInput.value.length);
       console.log("access_code:", accessInput.value);
 
+      debugger; // Use this to pause and inspect the form before submission
       form.submit();
       resolve();
 
