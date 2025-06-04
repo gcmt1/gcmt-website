@@ -116,7 +116,7 @@ export default function Checkout() {
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
 
   // Clear cart after successful payment
-  const clearCart = async () => {
+  const clearCart = React.useCallback(async () => {
     try {
       if (user?.id) {
         await supabase.from('cart_items').delete().eq('user_id', user.id);
@@ -127,7 +127,7 @@ export default function Checkout() {
     } catch (err) {
       console.error('Error clearing cart:', err);
     }
-  };
+  }, [user?.id]);
 
   // Save contact info + create order record in Supabase
   const handleSaveContactInfo = async () => {
@@ -273,7 +273,7 @@ export default function Checkout() {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-    form.target = '_self'; // Stay in same window
+    form.target = '_black'; // Stay in same window
     
     // Add encRequest input
     const encInput = document.createElement('input');
