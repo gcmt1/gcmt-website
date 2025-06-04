@@ -183,7 +183,7 @@ export default function Checkout() {
     }
   };
 
-  // Initiate CCAvenue payment with proper form handling
+  // FIXED: Improved CCAvenue payment initiation
   const handlePayment = async () => {
     if (!savedOrderId) {
       showToast('Please save contact info before proceeding to payment.', 'error');
@@ -192,13 +192,16 @@ export default function Checkout() {
 
     setLoading(true);
     try {
+      // Ensure proper order ID format
+      const orderId = `ORDER${savedOrderId}_${Date.now()}`;
+      
       const requestBody = {
         merchant_id: '4311301',
-        order_id: `ORDER${savedOrderId}`,
+        order_id: orderId,
         amount: total.toFixed(2),
         currency: 'INR',
-        redirect_url: 'https://gcmtshop.com/payment-success',
-        cancel_url: 'https://gcmtshop.com/payment-cancel',
+        redirect_url: `${window.location.origin}/payment-success`,
+        cancel_url: `${window.location.origin}/payment-cancel`,
         language: 'EN',
         billing_name: formData.name.trim(),
         billing_address: formData.street.trim(),
@@ -215,6 +218,10 @@ export default function Checkout() {
         delivery_zip: formData.pincode.trim(),
         delivery_country: 'India',
         delivery_tel: formData.phone.trim(),
+        // Add merchant parameters for better tracking
+        merchant_param1: savedOrderId.toString(),
+        merchant_param2: user?.id || 'guest',
+        merchant_param3: cartItems.length.toString(),
       };
 
       console.log('🚀 Sending payment request:', requestBody);
@@ -223,7 +230,9 @@ export default function Checkout() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          // Add origin header to help with CORS
+          'Origin': window.location.origin
         },
         body: JSON.stringify(requestBody),
       });
@@ -233,82 +242,112 @@ export default function Checkout() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Backend error response:', errorText);
-        showToast(`Payment initiation failed: ${response.status} ${response.statusText}`, 'error');
-        return;
+        throw new Error(`Backend error: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
       console.log('✅ Backend response:', result);
 
-      if (!result.encRequest) {
-        console.error('❌ Missing encRequest in response:', result);
-        showToast('Payment initiation failed - missing encrypted request.', 'error');
-        return;
+      // Enhanced validation of encrypted request
+      if (!result.encRequest || typeof result.encRequest !== 'string' || result.encRequest.trim().length === 0) {
+        console.error('❌ Invalid encRequest:', result.encRequest);
+        throw new Error('Invalid encrypted request received from backend');
       }
 
-      if (result.encRequest.length === 0) {
-        console.error('❌ Empty encRequest received');
-        showToast('Payment initiation failed - empty encrypted request.', 'error');
-        return;
-      }
+      console.log('🔐 encRequest received (length):', result.encRequest.length);
+      console.log('🔐 encRequest preview:', result.encRequest.substring(0, 50) + '...');
 
-      console.log('🔐 encRequest length:', result.encRequest.length);
-
-      // Create and submit form to CCAvenue using proper method
-      submitToCCAvenue(result.encRequest);
+      // Submit to CCAvenue with improved error handling
+      await submitToCCAvenue(result.encRequest, orderId);
 
     } catch (err) {
       console.error('💥 Payment error:', err);
-      showToast('Error initiating payment. Please try again.', 'error');
+      showToast(`Payment initiation failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Separate function to handle CCAvenue form submission
-  const submitToCCAvenue = (encRequest) => {
-    console.log('🚀 Submitting to CCAvenue...');
-    
-    // Create form element
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-    form.target = '_self'; // Stay in same window
-    
-    // Add encRequest input
-    const encInput = document.createElement('input');
-    encInput.type = 'hidden';
-    encInput.name = 'encRequest';
-    encInput.value = encRequest;
-    form.appendChild(encInput);
-    
-    // Add access_code input
-    const accessCodeInput = document.createElement('input');
-    accessCodeInput.type = 'hidden';
-    accessCodeInput.name = 'access_code';
-    accessCodeInput.value = 'AVNS75ME47CK48SNKC';
-    form.appendChild(accessCodeInput);
-    
-    console.log('📝 Form details:');
-    console.log('  Action:', form.action);
-    console.log('  Method:', form.method);
-    console.log('  encRequest length:', encRequest.length);
-    console.log('  Access Code:', 'AVNS75ME47CK48SNKC');
-    
-    // Append to body and submit
-    document.body.appendChild(form);
-    
-    // Small delay to ensure form is fully attached
-    setTimeout(() => {
-      form.submit();
-    }, 100);
-    
-    // Clean up after a delay
-    setTimeout(() => {
-      if (document.body.contains(form)) {
-        document.body.removeChild(form);
+  // FIXED: Enhanced CCAvenue form submission with better error handling
+  const submitToCCAvenue = (encRequest, orderId) => {
+    return new Promise((resolve, reject) => {
+      console.log('🚀 Submitting to CCAvenue...');
+      
+      try {
+        // Validate inputs before submission
+        if (!encRequest || typeof encRequest !== 'string') {
+          throw new Error('Invalid encrypted request');
+        }
+
+        // Create form element with proper attributes
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+        form.target = '_self';
+        form.style.display = 'none'; // Hide the form
+        
+        // Add encRequest input with proper validation
+        const encInput = document.createElement('input');
+        encInput.type = 'hidden';
+        encInput.name = 'encRequest';
+        encInput.value = encRequest.trim(); // Ensure no whitespace
+        form.appendChild(encInput);
+        
+        // Add access_code input
+        const accessCodeInput = document.createElement('input');
+        accessCodeInput.type = 'hidden';
+        accessCodeInput.name = 'access_code';
+        accessCodeInput.value = 'AVNS75ME47CK48SNKC';
+        form.appendChild(accessCodeInput);
+        
+        // Optional: Add order reference for debugging
+        const orderRefInput = document.createElement('input');
+        orderRefInput.type = 'hidden';
+        orderRefInput.name = 'order_ref';
+        orderRefInput.value = orderId;
+        form.appendChild(orderRefInput);
+        
+        console.log('📝 Form submission details:');
+        console.log('  Action:', form.action);
+        console.log('  Method:', form.method);
+        console.log('  encRequest length:', encRequest.length);
+        console.log('  Access Code:', 'AVNS75ME47CK48SNKC');
+        console.log('  Order Reference:', orderId);
+        
+        // Append to body
+        document.body.appendChild(form);
+        
+        // Add form validation before submission
+        const formData = new FormData(form);
+        console.log('📋 Form data entries:');
+        for (let [key, value] of formData.entries()) {
+          console.log(`  ${key}: ${typeof value === 'string' ? value.substring(0, 50) + (value.length > 50 ? '...' : '') : value}`);
+        }
+        
+        // Submit the form
+        setTimeout(() => {
+          try {
+            form.submit();
+            console.log('✅ Form submitted successfully');
+            resolve();
+          } catch (submitError) {
+            console.error('❌ Form submission error:', submitError);
+            reject(submitError);
+          }
+        }, 100);
+        
+        // Clean up after delay
+        setTimeout(() => {
+          if (document.body.contains(form)) {
+            document.body.removeChild(form);
+          }
+        }, 5000);
+        
+      } catch (error) {
+        console.error('❌ Form creation error:', error);
+        reject(error);
       }
-    }, 2000);
+    });
   };
 
   // Listen for payment completion messages
@@ -495,4 +534,3 @@ export default function Checkout() {
     </div>
   );
 }
-//test
