@@ -274,7 +274,7 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       const form = document.createElement('form');
       form.setAttribute('data-ccavenue-form', 'true');
       form.method = 'POST';
-      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.action = 'https://secure.ccavenue.com/transaction/initTrans';
       form.style.display = 'none';
 
       // Add encRequest
