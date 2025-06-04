@@ -193,7 +193,8 @@ export default function Checkout() {
     setLoading(true);
     try {
       // Create a simple, unique order ID
-      const orderId = `ORD${savedOrderId}_${Date.now()}`;
+      const orderId = `ORD${savedOrderId}`;
+      setSavedOrderId(orderId); // Store it as the identifier used by CCAvenue
       
       const MERCHANT_ID = '4311301';
       const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
@@ -258,74 +259,50 @@ export default function Checkout() {
   };
 
   // FIXED: Simplified and more reliable CCAvenue form submission
-  const submitToCCAvenue = (encRequest, accessCode) => {
-    return new Promise((resolve, reject) => {
-      try {
-        console.log('🚀 Submitting to CCAvenue...');
-        
-        // Clean up any existing forms
-        const existingForms = document.querySelectorAll('form[data-ccavenue-form="true"]');
-        existingForms.forEach(form => form.remove());
+const submitToCCAvenue = (encRequest, accessCode) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Clean up previous form if any
+      const existingForm = document.querySelector('form[data-ccavenue-form="true"]');
+      if (existingForm) existingForm.remove();
 
-        // Create form element
-        const form = document.createElement('form');
-        form.setAttribute('data-ccavenue-form', 'true');
-        form.method = 'post';
-        form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-        form.style.display = 'none';
-        
-        // Create encRequest input - ensure no whitespace issues
-        const encRequestInput = document.createElement('input');
-        encRequestInput.type = 'hidden';
-        encRequestInput.name = 'encRequest';
-        encRequestInput.value = encRequest.trim(); // Trim any whitespace
-        
-        // Create access_code input
-        const accessCodeInput = document.createElement('input');
-        accessCodeInput.type = 'hidden';
-        accessCodeInput.name = 'access_code';
-        accessCodeInput.value = accessCode.trim();
-        
-        // Append inputs to form
-        form.appendChild(encRequestInput);
-        form.appendChild(accessCodeInput);
-        
-        // Append form to body
-        document.body.appendChild(form);
-        
-        console.log('📝 Form details:');
-        console.log('  Action:', form.action);
-        console.log('  Method:', form.method);
-        console.log('  encRequest length:', encRequestInput.value.length);
-        console.log('  access_code:', accessCodeInput.value);
-        
-        // Submit form
-        form.submit();
-        console.log('✅ Form submitted to CCAvenue');
-        
-        // Update UI
-        const payButton = document.querySelector('.btn-success');
-        if (payButton) {
-          payButton.textContent = 'Redirecting to CCAvenue...';
-          payButton.disabled = true;
-        }
-        
-        // Clean up after delay
-        setTimeout(() => {
-          const formToRemove = document.querySelector('form[data-ccavenue-form="true"]');
-          if (formToRemove && document.body.contains(formToRemove)) {
-            document.body.removeChild(formToRemove);
-          }
-        }, 5000);
-        
-        resolve();
-        
-      } catch (error) {
-        console.error('❌ Form submission error:', error);
-        reject(error);
-      }
-    });
-  };
+      // Create a fresh form
+      const form = document.createElement('form');
+      form.setAttribute('data-ccavenue-form', 'true');
+      form.method = 'POST';
+      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.style.display = 'none';
+
+      // Add encRequest
+      const encInput = document.createElement('input');
+      encInput.type = 'hidden';
+      encInput.name = 'encRequest';
+      encInput.value = encRequest.trim();
+
+      // Add access_code
+      const accessInput = document.createElement('input');
+      accessInput.type = 'hidden';
+      accessInput.name = 'access_code';
+      accessInput.value = accessCode.trim();
+
+      // Append inputs
+      form.appendChild(encInput);
+      form.appendChild(accessInput);
+      document.body.appendChild(form);
+
+      console.log("🔐 Submitting encrypted form to CCAvenue...");
+      console.log("encRequest length:", encInput.value.length);
+      console.log("access_code:", accessInput.value);
+
+      form.submit();
+      resolve();
+
+    } catch (error) {
+      console.error('❌ Error submitting to CCAvenue:', error);
+      reject(error);
+    }
+  });
+};
 
   // Listen for payment completion messages
   useEffect(() => {
