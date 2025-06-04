@@ -273,7 +273,7 @@ export default function Checkout() {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-    form.target = '_black'; // Stay in same window
+    form.target = '_self'; // Stay in same window
     
     // Add encRequest input
     const encInput = document.createElement('input');

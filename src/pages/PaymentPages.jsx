@@ -13,15 +13,59 @@ export function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const orderId = searchParams.get('order_id') || searchParams.get('merchant_param1');
-    
-    if (orderId) {
-      fetchOrderDetails(orderId);
+    // CCAvenue will redirect with encResp parameter
+    const encResp = searchParams.get('encResp');
+    if (encResp) {
+      verifyPayment(encResp);
     } else {
-      setLoading(false);
-      showToast('Order ID not found', 'error');
+      // Fallback: maybe merchant_param1 or order_id was provided
+      const orderId = searchParams.get('order_id') || searchParams.get('merchant_param1');
+      if (orderId) {
+        fetchOrderDetails(orderId);
+      } else {
+        setLoading(false);
+        showToast('Order ID not found', 'error');
+      }
     }
-  }, [searchParams, showToast]);
+  }, [searchParams]);
+
+  // Call backend to decrypt encResp, verify payment, and update order
+  const verifyPayment = async (encResp) => {
+    try {
+      const response = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ encResp }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('❌ verify-payment error response:', text);
+        showToast('Payment verification failed', 'error');
+        setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      // Expected response shape: { success: boolean, order: { /* order record */ } }
+      if (data.success && data.order) {
+        setOrderDetails(data.order);
+        if (data.order.payment_status === 'COMPLETED') {
+          showToast('Payment verified and successful!', 'success');
+        } else {
+          showToast('Payment is processing or failed', 'warning');
+        }
+      } else {
+        console.error('❌ verify-payment returned invalid payload:', data);
+        showToast('Payment verification failed', 'error');
+      }
+    } catch (err) {
+      console.error('💥 verifyPayment error:', err);
+      showToast('Error verifying payment', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchOrderDetails = async (orderId) => {
     try {
@@ -32,9 +76,8 @@ export function PaymentSuccess() {
         .single();
 
       if (error) throw error;
-      
+
       setOrderDetails(data);
-      
       if (data.payment_status === 'COMPLETED') {
         showToast('Payment successful! Order confirmed.', 'success');
       }
@@ -77,7 +120,7 @@ export function PaymentSuccess() {
     <div className="payment-status-container">
       <div className={`payment-status-card ${isSuccess ? 'success' : 'error'}`}>
         <h1>{isSuccess ? '✅ Payment Successful!' : '❌ Payment Processing'}</h1>
-        
+
         <div className="order-details">
           <h3>Order Details</h3>
           <div className="detail-row">
@@ -111,7 +154,7 @@ export function PaymentSuccess() {
 
         <div className="action-buttons">
           {isSuccess && (
-            <button 
+            <button
               onClick={() => navigate(`/order-confirmation/${orderDetails.id}`)}
               className="btn btn-success"
             >
@@ -143,7 +186,7 @@ export function PaymentCancel() {
     <div className="payment-status-container">
       <div className="payment-status-card cancel">
         <h1>⚠️ Payment Cancelled</h1>
-        
+
         <div className="cancel-message">
           <p>Your payment was cancelled and no charges have been made.</p>
           {orderId && <p>Order ID: #{orderId}</p>}
@@ -151,16 +194,10 @@ export function PaymentCancel() {
         </div>
 
         <div className="action-buttons">
-          <button 
-            onClick={() => navigate('/checkout')}
-            className="btn btn-primary"
-          >
+          <button onClick={() => navigate('/checkout')} className="btn btn-primary">
             Try Again
           </button>
-          <button 
-            onClick={() => navigate('/cart')}
-            className="btn btn-outline"
-          >
+          <button onClick={() => navigate('/cart')} className="btn btn-outline">
             Return to Cart
           </button>
           <button onClick={() => navigate('/')} className="btn btn-outline">
@@ -229,10 +266,10 @@ export function OrderConfirmation() {
     );
   }
 
-  const formatCurrency = (amount) => 
-    new Intl.NumberFormat('en-IN', { 
-      style: 'currency', 
-      currency: 'INR' 
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
     }).format(amount);
 
   return (
@@ -259,9 +296,15 @@ export function OrderConfirmation() {
           <div className="info-section">
             <h3>Customer Information</h3>
             <div className="customer-info">
-              <p><strong>Name:</strong> {orderDetails.user_name}</p>
-              <p><strong>Email:</strong> {orderDetails.user_email}</p>
-              <p><strong>Phone:</strong> {orderDetails.user_phone}</p>
+              <p>
+                <strong>Name:</strong> {orderDetails.user_name}
+              </p>
+              <p>
+                <strong>Email:</strong> {orderDetails.user_email}
+              </p>
+              <p>
+                <strong>Phone:</strong> {orderDetails.user_phone}
+              </p>
             </div>
           </div>
 
@@ -269,24 +312,27 @@ export function OrderConfirmation() {
             <h3>Shipping Address</h3>
             <div className="address-info">
               <p>{orderDetails.address_line}</p>
-              <p>{orderDetails.city}, {orderDetails.state} - {orderDetails.postal_code}</p>
+              <p>
+                {orderDetails.city}, {orderDetails.state} - {orderDetails.postal_code}
+              </p>
             </div>
           </div>
 
           <div className="info-section">
             <h3>Order Items</h3>
             <div className="items-list">
-              {orderDetails.product_list && orderDetails.product_list.map((item, index) => (
-                <div key={index} className="order-item">
-                  <div className="item-details">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-quantity">Qty: {item.quantity}</span>
+              {orderDetails.product_list &&
+                orderDetails.product_list.map((item, index) => (
+                  <div key={index} className="order-item">
+                    <div className="item-details">
+                      <span className="item-name">{item.name}</span>
+                      <span className="item-quantity">Qty: {item.quantity}</span>
+                    </div>
+                    <span className="item-price">
+                      {formatCurrency(item.unit_price * item.quantity)}
+                    </span>
                   </div>
-                  <span className="item-price">
-                    {formatCurrency(item.unit_price * item.quantity)}
-                  </span>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 
