@@ -297,6 +297,10 @@ const submitToCCAvenue = (encRequest, accessCode) => {
         accessCode: accessCode,
       }));
 
+      console.log('✅ Final payload being submitted to CCAvenue:');
+      console.log('action:', form.action);
+      console.log('encRequest:', encRequest?.slice(0, 100));
+      console.log('accessCode:', accessCode);
       form.submit();
       resolve();
     } catch (err) {
