@@ -266,45 +266,42 @@ export default function Checkout() {
 const submitToCCAvenue = (encRequest, accessCode) => {
   return new Promise((resolve, reject) => {
     try {
-      // Clean up previous form if any
-      const existingForm = document.querySelector('form[data-ccavenue-form="true"]');
-      if (existingForm) existingForm.remove();
+      const oldForm = document.querySelector('form[data-ccavenue-form="true"]');
+      if (oldForm) oldForm.remove();
 
-      // Create a fresh form
       const form = document.createElement('form');
       form.setAttribute('data-ccavenue-form', 'true');
       form.method = 'POST';
       form.action = 'https://secure.ccavenue.com/transaction/initTrans';
       form.style.display = 'none';
 
-      // Add encRequest
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
       encInput.name = 'encRequest';
-      encInput.value = encRequest.trim();
+      encInput.value = encRequest?.trim();
 
-      // Add access_code
       const accessInput = document.createElement('input');
       accessInput.type = 'hidden';
       accessInput.name = 'access_code';
-      accessInput.value = accessCode.trim();
+      accessInput.value = accessCode?.trim();
 
-      // Append inputs
       form.appendChild(encInput);
       form.appendChild(accessInput);
       document.body.appendChild(form);
 
-      console.log("🔐 Submitting encrypted form to CCAvenue...");
-      console.log("encRequest length:", encInput.value.length);
-      console.log("access_code:", accessInput.value);
+      // 🔒 Save debug info before redirect
+      localStorage.setItem('ccavenue_debug', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        encRequestPreview: encRequest?.slice(0, 100), // Preview only
+        encRequestLength: encRequest?.length,
+        accessCode: accessCode,
+      }));
 
-      debugger; // Use this to pause and inspect the form before submission
       form.submit();
-      console.log('✅ Form submitted to CCAvenue successfully.');
-      
-    } catch (error) {
-      console.error('❌ Error submitting to CCAvenue:', error);
-      reject(error);
+      resolve();
+    } catch (err) {
+      console.error("❌ Error submitting to CCAvenue", err);
+      reject(err);
     }
   });
 };
