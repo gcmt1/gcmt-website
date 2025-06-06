@@ -183,129 +183,229 @@ export default function Checkout() {
     }
   };
 
-  // FIXED: Improved CCAvenue payment initiation
-  const handlePayment = async () => {
-    if (!savedOrderId) {
-      showToast('Please save contact info before proceeding to payment.', 'error');
-      return;
-    }
+// IMPROVED: Better error handling for payment initiation
+const handlePayment = async () => {
+  if (!savedOrderId) {
+    showToast('Please save contact info before proceeding to payment.', 'error');
+    return;
+  }
 
-    setLoading(true);
-    try {
-      // Create a simple, unique order ID
-      const orderId = `ORD${savedOrderId}`;
-      setSavedOrderId(orderId); // Store it as the identifier used by CCAvenue
-      
-      const MERCHANT_ID = '4311301';
-      const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
-      
-      // Simplified request body matching your Postman test
-      const requestBody = {
-        merchant_id: MERCHANT_ID,
-        order_id: orderId,
-        amount: total.toFixed(2),
-        currency: 'INR',
-        redirect_url: 'https://gcmtshop.com/payment-success',
-        cancel_url: 'https://gcmtshop.com/payment-cancel',
-        language: 'EN',
-        // Add essential billing info (CCAvenue often requires these)
-        billing_name: formData.name.trim(),
-        billing_address: formData.street.trim(),
-        billing_city: formData.city.trim(),
-        billing_state: formData.state.trim(),
-        billing_zip: formData.pincode.trim(),
-        billing_country: 'India',
-        billing_tel: formData.phone.trim(),
-        billing_email: formData.email.trim().toLowerCase(),
-        // Keep merchant params simple
-        merchant_param1: savedOrderId.toString(),
-      };
+  setLoading(true);
+  try {
+    // Create a simple, unique order ID
+    const orderId = `ORD${savedOrderId}`;
+    
+    const MERCHANT_ID = '4311301';
+    const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
+    
+    // Prepare request body with all required fields
+    const requestBody = {
+      merchant_id: MERCHANT_ID,
+      order_id: orderId,
+      amount: total.toFixed(2),
+      currency: 'INR',
+      redirect_url: 'https://gcmtshop.com/payment-success',
+      cancel_url: 'https://gcmtshop.com/payment-cancel',
+      language: 'EN',
+      // Essential billing information
+      billing_name: formData.name.trim(),
+      billing_address: formData.street.trim(),
+      billing_city: formData.city.trim(),
+      billing_state: formData.state.trim(),
+      billing_zip: formData.pincode.trim(),
+      billing_country: 'India',
+      billing_tel: formData.phone.trim(),
+      billing_email: formData.email.trim().toLowerCase(),
+      // Merchant parameters
+      merchant_param1: savedOrderId.toString(),
+    };
 
-      console.log('🚀 Payment request:', requestBody);
+    console.log('🚀 Initiating payment with request:', requestBody);
 
-      const response = await fetch('https://gcmtshop-cca-backend.vercel.app/api/createOrder', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+    // Call your backend
+    const response = await fetch('https://gcmtshop-cca-backend.vercel.app/api/createOrder', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    // Check if response is ok
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Backend response error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Backend error:', errorText);
-        throw new Error(`Backend error: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Backend response:', result);
-
-      // Save debug info to localStorage
-      localStorage.setItem('ccavenue_debug', JSON.stringify({ requestBody, backendResponse: result }));
-
-      if (!result.encRequest || typeof result.encRequest !== 'string' || result.encRequest.trim().length === 0) {
-        throw new Error('Invalid or empty encrypted request received from backend');
-      }
-
-      console.log('🔐 Encrypted request length:', result.encRequest.length);
-
-      // Submit to CCAvenue
-      await submitToCCAvenue(result.encRequest, ACCESS_CODE);
-
-    } catch (err) {
-      console.error('💥 Payment error:', err);
-      showToast(`Payment initiation failed: ${err.message}`, 'error');
-    } finally {
-      setLoading(false);
+      throw new Error(`Backend error: ${response.status} - ${errorText}`);
     }
-  };
 
+    const result = await response.json();
+    console.log('✅ Backend response:', result);
 
-  // FIXED: Simplified and more reliable CCAvenue form submission
+    // Validate the response
+    if (!result || typeof result !== 'object') {
+      throw new Error('Invalid response format from backend');
+    }
+
+    if (!result.encRequest || typeof result.encRequest !== 'string') {
+      throw new Error('Missing or invalid encRequest in backend response');
+    }
+
+    if (result.encRequest.trim().length === 0) {
+      throw new Error('Empty encRequest received from backend');
+    }
+
+    console.log('🔐 Encrypted request details:');
+    console.log('- Length:', result.encRequest.length);
+    console.log('- First 50 chars:', result.encRequest.substring(0, 50));
+    console.log('- Last 50 chars:', result.encRequest.substring(result.encRequest.length - 50));
+
+    // Store the order ID for later reference
+    setSavedOrderId(orderId);
+
+    // Submit to CCAvenue with improved error handling
+    await submitToCCAvenue(result.encRequest, ACCESS_CODE);
+
+  } catch (err) {
+    console.error('💥 Payment initiation error:', err);
+    
+    // Store error details for debugging
+    localStorage.setItem('ccavenue_error', JSON.stringify({
+      timestamp: new Date().toISOString(),
+      error: err.message,
+      stack: err.stack,
+    }));
+    
+    showToast(`Payment failed: ${err.message}`, 'error');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ADDITIONAL: Debug helper function (call this in browser console if needed)
+window.debugCCAvenue = () => {
+  const debug = localStorage.getItem('ccavenue_debug');
+  const error = localStorage.getItem('ccavenue_error');
+  
+  console.log('🔍 CCAvenue Debug Info:');
+  if (debug) {
+    console.log('Debug:', JSON.parse(debug));
+  }
+  if (error) {
+    console.log('Error:', JSON.parse(error));
+  }
+  
+  // Check for any remaining forms
+  const forms = document.querySelectorAll('form[data-ccavenue-form="true"]');
+  console.log('Remaining CCAvenue forms:', forms.length);
+  
+  return { debug: debug ? JSON.parse(debug) : null, error: error ? JSON.parse(error) : null };
+};
+
+// FIXED: More robust CCAvenue form submission
 const submitToCCAvenue = (encRequest, accessCode) => {
   return new Promise((resolve, reject) => {
     try {
-      const oldForm = document.querySelector('form[data-ccavenue-form="true"]');
-      if (oldForm) oldForm.remove();
+      console.log('🔧 Starting CCAvenue form submission...');
+      console.log('📊 encRequest length:', encRequest?.length);
+      console.log('🔑 accessCode:', accessCode);
+      
+      // Validate inputs
+      if (!encRequest || typeof encRequest !== 'string' || encRequest.trim().length === 0) {
+        throw new Error('Invalid encRequest: empty or not a string');
+      }
+      
+      if (!accessCode || typeof accessCode !== 'string' || accessCode.trim().length === 0) {
+        throw new Error('Invalid accessCode: empty or not a string');
+      }
 
+      // Remove any existing CCAvenue forms
+      const existingForms = document.querySelectorAll('form[data-ccavenue-form="true"]');
+      existingForms.forEach(form => form.remove());
+
+      // Create the form
       const form = document.createElement('form');
       form.setAttribute('data-ccavenue-form', 'true');
       form.method = 'POST';
       form.action = 'https://secure.ccavenue.com/transaction/initTrans';
+      form.target = '_blank'; // Changed from _blank to _self for better handling
       form.style.display = 'none';
+      
+      // CRITICAL: Set proper encoding for CCAvenue
+      form.enctype = 'application/x-www-form-urlencoded';
+      form.acceptCharset = 'UTF-8';
 
+      // Create encRequest input
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
       encInput.name = 'encRequest';
-      encInput.value = encRequest?.trim();
+      encInput.value = encRequest.trim();
 
+      // Create access_code input
       const accessInput = document.createElement('input');
       accessInput.type = 'hidden';
       accessInput.name = 'access_code';
-      accessInput.value = accessCode?.trim();
+      accessInput.value = accessCode.trim();
 
+      // Append inputs to form
       form.appendChild(encInput);
       form.appendChild(accessInput);
+
+      // Append form to body
       document.body.appendChild(form);
 
-      // 🔒 Save debug info before redirect
+      // Debug: Log the final form before submission
+      console.log('✅ Form created successfully:');
+      console.log('- Action:', form.action);
+      console.log('- Method:', form.method);
+      console.log('- Target:', form.target);
+      console.log('- Enctype:', form.enctype);
+      console.log('- Inputs count:', form.querySelectorAll('input').length);
+      
+      // Verify the inputs are properly set
+      const finalEncInput = form.querySelector('input[name="encRequest"]');
+      const finalAccessInput = form.querySelector('input[name="access_code"]');
+      
+      console.log('🔍 Final input verification:');
+      console.log('- encRequest input exists:', !!finalEncInput);
+      console.log('- encRequest value length:', finalEncInput?.value?.length);
+      console.log('- access_code input exists:', !!finalAccessInput);
+      console.log('- access_code value:', finalAccessInput?.value);
+
+      // Save comprehensive debug info
       localStorage.setItem('ccavenue_debug', JSON.stringify({
         timestamp: new Date().toISOString(),
-        encRequestPreview: encRequest?.slice(0, 100), // Preview only
+        formAction: form.action,
+        formMethod: form.method,
+        formTarget: form.target,
         encRequestLength: encRequest?.length,
+        encRequestPreview: encRequest?.substring(0, 50) + '...',
         accessCode: accessCode,
+        inputsCount: form.querySelectorAll('input').length,
+        finalEncInputExists: !!finalEncInput,
+        finalAccessInputExists: !!finalAccessInput,
       }));
 
-      console.log('✅ Final payload being submitted to CCAvenue:');
-      console.log('action:', form.action);
-      console.log('encRequest:', encRequest?.slice(0, 100));
-      console.log('accessCode:', accessCode);
-      form.submit();
-      resolve();
+      // Add a small delay to ensure DOM is ready, then submit
+      setTimeout(() => {
+        try {
+          console.log('🚀 Submitting form to CCAvenue...');
+          form.submit();
+          console.log('✅ Form submitted successfully');
+          resolve();
+        } catch (submitError) {
+          console.error('❌ Form submission error:', submitError);
+          reject(new Error(`Form submission failed: ${submitError.message}`));
+        }
+      }, 100);
+
     } catch (err) {
-      console.error("❌ Error submitting to CCAvenue", err);
-      reject(err);
+      console.error('❌ Error in submitToCCAvenue:', err);
+      reject(new Error(`CCAvenue submission setup failed: ${err.message}`));
     }
   });
 };

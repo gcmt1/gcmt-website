@@ -36,8 +36,20 @@ const ProductDetail = () => {
         }
 
         // Process the data
-        const variants = data.size ? data.size.split(',').map(v => v.trim()) : [];
-        const benefits = data.key_benefits ? data.key_benefits.split(',').map(b => b.trim()) : [];
+        const variants = data.size
+          ? data.size.split(',').map(v => v.trim())
+          : [];
+
+        // ─── KEY BENEFITS ───────────────────────────────────────────────────────────
+        // Supabase/Postgres often returns an array‐literal like {"Benefit A","Benefit B",…}
+        // so we strip off { } and " first, then split on commas.
+        const rawBenefits = data.key_benefits || '';
+        const cleanedBenefits = rawBenefits.replace(/[\{\}"]/g, ''); 
+        const benefits = cleanedBenefits
+          ? cleanedBenefits.split(',').map(b => b.trim())
+          : [];
+          
+        // ─── INGREDIENTS ────────────────────────────────────────────────────────────
         const ingredients = data.ingredients_name
           ? data.ingredients_name.split(',').map((name, i) => ({
               name: name.trim(),

@@ -1,117 +1,272 @@
-import React from "react";
-import "../styles/BlogPage.css";
+import React, { useState } from "react";
+import "../styles/BlogPage.css"; // Import your new CSS file
+import logo from "../assets/GCMT-logo.png"; // Import logo image
 
 const BlogPage = () => {
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+
   const blogPosts = [
     {
       id: 1,
-      title: "5 Benefits of Charcoal Toothpaste",
-      excerpt: "Discover how activated charcoal naturally whitens teeth and fights plaque.",
-      date: "May 5, 2025",
-      category: "Oral Care",
-      imageUrl: "/images/blog/charcoal-toothpaste.jpg",
-      readTime: "5 min read",
+      title: "Turmeric: The Golden Spice of Ayurveda and Its Modern Health Applications",
+      excerpt: "Explore the ancient wisdom and contemporary research behind turmeric's powerful anti-inflammatory and antioxidant properties in modern wellness.",
+      date: "May 15, 2025",
+      category: "Herbal Education",
+      imageUrl: logo,
+      readTime: "8 min read",
+      author: "Dr. Priya Sharma"
     },
     {
       id: 2,
-      title: "Why Ayurveda is the Future of Health",
-      excerpt: "Ancient herbs and modern science combine to create powerful wellness solutions.",
-      date: "April 28, 2025",
-      category: "Wellness",
-      imageUrl: "/images/blog/ayurveda-herbs.jpg",
-      readTime: "8 min read",
+      title: "Understanding Doshas: A Complete Guide to Ayurvedic Body Types",
+      excerpt: "Learn how to identify your unique Ayurvedic constitution and customize your health routine according to Vata, Pitta, and Kapha principles.",
+      date: "May 12, 2025",
+      category: "Ayurvedic Principles",
+      imageUrl: logo,
+      readTime: "12 min read",
+      author: "Vaidya Rajesh Kumar"
     },
     {
       id: 3,
-      title: "Fluoride-Free Toothpaste: A Smart Choice",
-      excerpt: "Learn why many health-conscious individuals are switching to fluoride-free options.",
-      date: "April 15, 2025",
-      category: "Oral Care",
-      imageUrl: "/images/blog/fluoride-free.jpg",
-      readTime: "6 min read",
+      title: "Ashwagandha for Stress Management: Clinical Studies and Traditional Use",
+      excerpt: "Discover how this adaptogenic herb helps combat modern stress while supporting overall vitality and mental clarity.",
+      date: "May 8, 2025",
+      category: "Herbal Education",
+      imageUrl: logo,
+      readTime: "10 min read",
+      author: "Dr. Anita Patel"
     },
     {
       id: 4,
-      title: "Sustainable Packaging in the Beauty Industry",
-      excerpt: "How we're reducing our environmental footprint with eco-friendly packaging solutions.",
-      date: "April 8, 2025",
-      category: "Sustainability",
-      imageUrl: "/images/blog/sustainable-packaging.jpg",
-      readTime: "4 min read",
+      title: "Seasonal Detox: Ayurvedic Cleansing Practices for Spring Renewal",
+      excerpt: "Learn traditional Panchakarma-inspired methods to cleanse and rejuvenate your body naturally as seasons change.",
+      date: "May 5, 2025",
+      category: "Wellness Practices",
+      imageUrl: logo,
+      readTime: "15 min read",
+      author: "Vaidya Rajesh Kumar"
     },
+    {
+      id: 5,
+      title: "Quality Standards in Herbal Manufacturing: What to Look For",
+      excerpt: "Understanding GMP standards, organic certifications, and third-party testing in the herbal supplement industry.",
+      date: "May 1, 2025",
+      category: "Industry Insights",
+      imageUrl: logo,
+      readTime: "7 min read",
+      author: "Dr. Priya Sharma"
+    },
+    {
+      id: 6,
+      title: "Triphala: The Three-Fruit Formula for Digestive Wellness",
+      excerpt: "Explore the synergistic benefits of Amalaki, Bibhitaki, and Haritaki in this time-tested Ayurvedic formulation.",
+      date: "April 28, 2025",
+      category: "Herbal Education",
+      imageUrl: logo,
+      readTime: "9 min read",
+      author: "Dr. Anita Patel"
+    }
   ];
+
+  const categories = ["All", "Herbal Education", "Ayurvedic Principles", "Wellness Practices", "Industry Insights"];
+
+  const filteredPosts = blogPosts.filter(post => {
+    const matchesCategory = activeCategory === "All" || post.category === activeCategory;
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="blog-container">
-      <div className="blog-header">
-        <h1>Insights & Inspiration</h1>
-        <p className="blog-subtitle">Expert advice, industry trends, and product insights from our team</p>
-        
-        <div className="blog-categories">
-          <button className="category-button active">All</button>
-          <button className="category-button">Oral Care</button>
-          <button className="category-button">Wellness</button>
-          <button className="category-button">Sustainability</button>
-          <button className="category-button">Product Guides</button>
-        </div>
-      </div>
-
-      <div className="featured-post">
-        <div className="featured-image">
-          <img src="/images/blog/featured-post.jpg" alt="Featured blog post" />
-          <span className="featured-tag">Featured</span>
-        </div>
-        <div className="featured-content">
-          <span className="post-category">Wellness</span>
-          <h2>The Science Behind Natural Ingredients: How They Benefit Your Daily Routine</h2>
-          <p className="post-meta">May 8, 2025 • 10 min read</p>
-          <p className="post-excerpt">
-            From antioxidant-rich botanicals to soothing essential oils, discover how nature's finest ingredients 
-            can transform your health and beauty regimen with proven scientific benefits.
+      {/* Skip Link for Accessibility */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      
+      {/* Header Section */}
+      <header className="blog-header">
+        <div className="blog-header-content">
+          <h1 className="blog-title">Herbal Wisdom & Wellness Insights</h1>
+          <p className="blog-subtitle">
+            Discover the science behind traditional Ayurvedic practices and learn how ancient herbal wisdom 
+            can enhance your modern lifestyle with evidence-based insights from our expert practitioners.
           </p>
-          <button className="read-more-button primary">Read Article</button>
         </div>
-      </div>
+      </header>
 
-      <div className="blog-search">
-        <input type="text" placeholder="Search articles..." />
-        <button className="search-button">Search</button>
-      </div>
+      <main id="main-content" className="blog-main">
+        {/* Category Filters */}
+        <section className="category-filters" role="tablist" aria-label="Article categories">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`category-btn ${activeCategory === category ? 'active' : ''}`}
+              role="tab"
+              aria-selected={activeCategory === category}
+              aria-controls="posts-grid"
+            >
+              {category}
+            </button>
+          ))}
+        </section>
 
-      <div className="blog-grid">
-        {blogPosts.map((post) => (
-          <div className="blog-card" key={post.id}>
-            <div className="card-image">
-              <img src={post.imageUrl} alt={post.title} />
-              <span className="post-category">{post.category}</span>
+        {/* Search Bar */}
+        <section className="search-container">
+          <div style={{ position: 'relative' }}>
+            <svg className="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search articles, herbs, or topics..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+              aria-label="Search articles"
+            />
+            <button className="search-btn" aria-label="Submit search">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        {/* Featured Article */}
+        <article className="featured-article">
+          <div className="featured-content">
+            <div>
+              <img 
+                src={logo} 
+                alt="Featured: Neem Research" 
+                className="featured-image"
+              />
             </div>
-            <div className="card-content">
-              <h3>{post.title}</h3>
-              <p className="post-meta">{post.date} • {post.readTime}</p>
-              <p className="post-excerpt">{post.excerpt}</p>
-              <button className="read-more-link">Read More →</button>
+            <div className="featured-text">
+              <div className="featured-badge">
+                <span className="featured-tag">Featured Research</span>
+                <span className="featured-label">Latest Study</span>
+              </div>
+              <h2 className="featured-title">
+                Breakthrough Research: Neem's Antimicrobial Properties in Modern Healthcare
+              </h2>
+              <p className="featured-excerpt">
+                New clinical studies reveal how traditional neem extracts show promising results against 
+                antibiotic-resistant bacteria, bridging ancient Ayurvedic knowledge with cutting-edge medical research.
+              </p>
+              <div className="featured-meta">
+                <span>May 18, 2025</span>
+                <span>•</span>
+                <span>12 min read</span>
+                <span>•</span>
+                <span>Dr. Rajesh Mehta, PhD</span>
+              </div>
+              <button className="featured-btn">
+                Read Full Study
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </article>
 
-      <div className="pagination">
-        <button className="pagination-button active">1</button>
-        <button className="pagination-button">2</button>
-        <button className="pagination-button">3</button>
-        <button className="pagination-button">Next →</button>
-      </div>
+        {/* Blog Posts Grid */}
+        <section id="posts-grid" className="posts-grid" role="tabpanel" aria-labelledby={`tab-${activeCategory}`}>
+          {filteredPosts.map((post) => (
+            <article key={post.id} className="post-card">
+              <div className="post-image-container">
+                <img 
+                  src={post.imageUrl} 
+                  alt={post.title}
+                  className="post-image"
+                />
+                <div className="post-category-tag">
+                  {post.category}
+                </div>
+              </div>
+              <div className="post-content">
+                <h3 className="post-title">
+                  {post.title}
+                </h3>
+                <p className="post-excerpt">
+                  {post.excerpt}
+                </p>
+                <div className="post-meta">
+                  <span>{post.date}</span>
+                  <span>{post.readTime}</span>
+                </div>
+                <div className="post-footer">
+                  <span className="post-author">{post.author}</span>
+                  <a href="#" className="read-more-btn">
+                    Read More 
+                    <svg className="read-more-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </section>
 
-      <div className="newsletter-section">
-        <div className="newsletter-content">
-          <h2>Stay Informed</h2>
-          <p>Subscribe to our newsletter for the latest articles, product updates, and exclusive offers.</p>
-        </div>
-        <div className="newsletter-form">
-          <input type="email" placeholder="Your email address" />
-          <button className="subscribe-button">Subscribe</button>
-        </div>
-      </div>
+        {/* No Results Message */}
+        {filteredPosts.length === 0 && (
+          <div className="no-results">
+            <div className="no-results-icon">🌿</div>
+            <h3 className="no-results-title">No articles found</h3>
+            <p className="no-results-text">Try adjusting your search or category filter</p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {filteredPosts.length > 0 && (
+          <nav className="pagination" role="navigation" aria-label="Pagination">
+            <button className="pagination-btn active" aria-current="page">
+              1
+            </button>
+            <button className="pagination-btn">
+              2
+            </button>
+            <button className="pagination-btn">
+              3
+            </button>
+            <button className="pagination-btn">
+              Next 
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </nav>
+        )}
+
+        {/* Newsletter Subscription */}
+        <section className="newsletter">
+          <div className="newsletter-content">
+            <h2 className="newsletter-title">Stay Connected with Herbal Wisdom</h2>
+            <p className="newsletter-text">
+              Subscribe to receive expert insights, seasonal wellness tips, and exclusive research updates 
+              directly from our Ayurvedic practitioners and herbalists.
+            </p>
+            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+              <input
+                type="email"
+                placeholder="Enter your email address"
+                className="newsletter-input"
+                aria-label="Email address"
+                required
+              />
+              <button type="submit" className="newsletter-btn">
+                Subscribe Now
+              </button>
+            </form>
+            <p className="newsletter-disclaimer">
+              Join 50,000+ wellness enthusiasts. Unsubscribe anytime.
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
