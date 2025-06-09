@@ -184,6 +184,7 @@ export default function Checkout() {
   };
 
 // IMPROVED: Better error handling for payment initiation
+// FIXED: Remove hardcoded credentials from frontend
 const handlePayment = async () => {
   if (!savedOrderId) {
     showToast('Please save contact info before proceeding to payment.', 'error');
@@ -195,12 +196,13 @@ const handlePayment = async () => {
     // Create a simple, unique order ID
     const orderId = `ORD${savedOrderId}`;
     
-    const MERCHANT_ID = '4311301';
-    const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
+    // ❌ REMOVE THESE HARDCODED VALUES - Let backend handle credentials
+    // const MERCHANT_ID = '4311301';
+    // const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
     
-    // Prepare request body with all required fields
+    // Prepare request body - REMOVE merchant_id from here
     const requestBody = {
-      merchant_id: MERCHANT_ID,
+      // merchant_id: MERCHANT_ID, // ❌ REMOVE THIS LINE
       order_id: orderId,
       amount: total.toFixed(2),
       currency: 'INR',
@@ -259,26 +261,24 @@ const handlePayment = async () => {
       throw new Error('Empty encRequest received from backend');
     }
 
+    // Get ACCESS_CODE from backend response or environment
+    const ACCESS_CODE = result.accessCode || process.env.NEXT_PUBLIC_ACCESS_CODE;
+    
+    if (!ACCESS_CODE) {
+      throw new Error('Access code not available');
+    }
+
     console.log('🔐 Encrypted request details:');
     console.log('- Length:', result.encRequest.length);
-    console.log('- First 50 chars:', result.encRequest.substring(0, 50));
-    console.log('- Last 50 chars:', result.encRequest.substring(result.encRequest.length - 50));
 
     // Store the order ID for later reference
     setSavedOrderId(orderId);
 
-    // Submit to CCAvenue with improved error handling
+    // Submit to CCAvenue with the access code
     await submitToCCAvenue(result.encRequest, ACCESS_CODE);
 
   } catch (err) {
     console.error('💥 Payment initiation error:', err);
-    
-    // Store error details for debugging
-    localStorage.setItem('ccavenue_error', JSON.stringify({
-      timestamp: new Date().toISOString(),
-      error: err.message,
-      stack: err.stack,
-    }));
     
     showToast(`Payment failed: ${err.message}`, 'error');
   } finally {
@@ -307,6 +307,7 @@ window.debugCCAvenue = () => {
 };
 
 // FIXED: More robust CCAvenue form submission
+// FIXED: Updated submitToCCAvenue function
 const submitToCCAvenue = (encRequest, accessCode) => {
   return new Promise((resolve, reject) => {
     try {
@@ -332,7 +333,7 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       form.setAttribute('data-ccavenue-form', 'true');
       form.method = 'POST';
       form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-      form.target = '_self'; // Changed from _blank to _self for better handling
+      form.target = '_self';
       form.style.display = 'none';
       
       // CRITICAL: Set proper encoding for CCAvenue
@@ -362,35 +363,10 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       console.log('✅ Form created successfully:');
       console.log('- Action:', form.action);
       console.log('- Method:', form.method);
-      console.log('- Target:', form.target);
-      console.log('- Enctype:', form.enctype);
-      console.log('- Inputs count:', form.querySelectorAll('input').length);
-      
-      // Verify the inputs are properly set
-      const finalEncInput = form.querySelector('input[name="encRequest"]');
-      const finalAccessInput = form.querySelector('input[name="access_code"]');
-      
-      console.log('🔍 Final input verification:');
-      console.log('- encRequest input exists:', !!finalEncInput);
-      console.log('- encRequest value length:', finalEncInput?.value?.length);
-      console.log('- access_code input exists:', !!finalAccessInput);
-      console.log('- access_code value:', finalAccessInput?.value);
+      console.log('- encRequest length:', encInput.value.length);
+      console.log('- access_code:', accessInput.value);
 
-      // Save comprehensive debug info
-      localStorage.setItem('ccavenue_debug', JSON.stringify({
-        timestamp: new Date().toISOString(),
-        formAction: form.action,
-        formMethod: form.method,
-        formTarget: form.target,
-        encRequestLength: encRequest?.length,
-        encRequestPreview: encRequest?.substring(0, 50) + '...',
-        accessCode: accessCode,
-        inputsCount: form.querySelectorAll('input').length,
-        finalEncInputExists: !!finalEncInput,
-        finalAccessInputExists: !!finalAccessInput,
-      }));
-
-      // Add a small delay to ensure DOM is ready, then submit
+      // Submit form
       setTimeout(() => {
         try {
           console.log('🚀 Submitting form to CCAvenue...');
@@ -409,7 +385,6 @@ const submitToCCAvenue = (encRequest, accessCode) => {
     }
   });
 };
-
   // Listen for payment completion messages
   useEffect(() => {
     const handlePaymentMessage = (event) => {
