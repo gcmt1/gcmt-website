@@ -20,6 +20,15 @@ export default function NavBar() {
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
 
+  // Check if user is a guest account
+  const isGuestAccount = (user) => {
+    if (!user) return true; // No user means guest
+    return user.email?.toLowerCase().includes('guest') || 
+           user.user_metadata?.is_guest || 
+           user.user_metadata?.account_type === 'guest' ||
+           user.is_anonymous;
+  };
+
   // Fetch session + cart
   useEffect(() => {
     async function init() {
@@ -103,6 +112,29 @@ export default function NavBar() {
     setMobileMenuOpen(false);
   }
 
+  function handleAuthRedirect() {
+    window.location.href = '#/auth';
+    closeMobileMenu();
+  }
+
+  function handleLogout() {
+    supabase.auth.signOut();
+    closeMobileMenu();
+  }
+
+  // Add/remove class to navbar element when mobile menu opens/closes
+  useEffect(() => {
+    const navbar = document.querySelector('.gcmt-navbar');
+    if (!navbar) return;
+    if (mobileMenuOpen) {
+      navbar.classList.add('gcmt-navbar--mobile-open');
+    } else {
+      navbar.classList.remove('gcmt-navbar--mobile-open');
+    }
+  }, [mobileMenuOpen]);
+
+  const isGuest = isGuestAccount(user);
+
   return (
     <header
       className={`gcmt-navbar
@@ -118,51 +150,41 @@ export default function NavBar() {
           </a>
         </div>
 
-        {/* Desktop & Mobile Menu */}
-        <nav
-          className={`gcmt-navbar__menu ${
-            mobileMenuOpen ? 'gcmt-navbar__menu--open' : ''
-          }`}
-        >
-          <ul className="gcmt-navbar__links">
-            {['Home','Products','About','Blog','Contact','FAQ'].map(label => (
-              <li key={label}>
-                <a
-                  href={`#/${label.toLowerCase()}`}
-                  className="gcmt-navbar__link"
-                  onClick={closeMobileMenu}
-                >
-                  {label}
-                </a>
-              </li>
-            ))}
-
-            <li className="gcmt-navbar__mobile-only">
-              {user ? (
-                <button
-                  onClick={() => { supabase.auth.signOut(); closeMobileMenu(); }}
-                  className="gcmt-navbar__logout-link"
-                >
-                  Logout
-                </button>
-              ) : (
-                <>
+          <nav
+            className={`gcmt-navbar__menu ${
+              mobileMenuOpen ? 'gcmt-navbar__menu--open' : ''
+            }`}
+          >
+            <ul className="gcmt-navbar__links">
+              {['Home','Products','About','Blog','Contact','FAQ'].map(label => (
+                <li key={label}>
+            <a
+              href={`#/${label.toLowerCase()}`}
+              className="gcmt-navbar__link"
+              onClick={closeMobileMenu}
+            >
+              {label}
+            </a>
+                </li>
+              ))}
+              
+              <li className="gcmt-navbar__mobile-only">
+                {user && !isGuest ? (
                   <button
-                    onClick={() => { toggleMobileMenu(); }}
-                    className="gcmt-navbar__link"
+                    onClick={handleLogout}
+                    className="gcmt-navbar__logout-link"
                   >
-                    Sign In
+                    Logout
                   </button>
-                  <a
-                    href="#/auth"
-                    className="gcmt-navbar__link"
-                    onClick={closeMobileMenu}
+                ) : (
+                  <button
+                    onClick={handleAuthRedirect}
+                    className="gcmt-navbar__auth-link"
                   >
-                    Register
-                  </a>
-                </>
-              )}
-            </li>
+                    Login / Sign Up
+                  </button>
+                )}
+              </li>
           </ul>
 
           <button
@@ -201,9 +223,9 @@ export default function NavBar() {
             </div>
           </div>
 
-          {/* Profile */}
+          {/* Profile / Auth Button */}
           <div className="gcmt-navbar__profile-container">
-            {user ? (
+            {user && !isGuest ? (
               <a
                 href="#/profile"
                 className="gcmt-navbar__action-btn gcmt-navbar__profile-btn"
@@ -214,9 +236,9 @@ export default function NavBar() {
               </a>
             ) : (
               <button
-                className="gcmt-navbar__action-btn"
-                onClick={() => {}}
-                aria-label="Sign In"
+                className="gcmt-navbar__action-btn gcmt-navbar__auth-btn"
+                onClick={handleAuthRedirect}
+                aria-label="Login / Sign Up"
               >
                 <User size={20} />
               </button>

@@ -331,8 +331,8 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       const form = document.createElement('form');
       form.setAttribute('data-ccavenue-form', 'true');
       form.method = 'POST';
-      form.action = 'https://secure.ccavenue.com/transaction/initTrans';
-      form.target = '_blank'; // Changed from _blank to _self for better handling
+      form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      form.target = '_self'; // Changed from _blank to _self for better handling
       form.style.display = 'none';
       
       // CRITICAL: Set proper encoding for CCAvenue
