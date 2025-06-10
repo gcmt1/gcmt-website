@@ -127,7 +127,7 @@ body {
    HEADER SECTION
 ======================================== */
 .blog-header {
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+  background: rgb(70, 70, 255);
   color: var(--white);
   padding: var(--space-4xl) var(--space-md) var(--space-3xl);
   text-align: center;

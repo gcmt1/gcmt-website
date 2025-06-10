@@ -202,12 +202,11 @@ const handlePayment = async () => {
     
     // Prepare request body - REMOVE merchant_id from here
     const requestBody = {
-      // merchant_id: MERCHANT_ID, // ❌ REMOVE THIS LINE
       order_id: orderId,
       amount: total.toFixed(2),
       currency: 'INR',
-      redirect_url: 'https://gcmtshop.com/payment-success',
-      cancel_url: 'https://gcmtshop.com/payment-cancel',
+      redirect_url: 'https://gcmtshop.com/#/payment-success',
+      cancel_url: 'https://gcmtshop.com/#/payment-cancel',
       language: 'EN',
       // Essential billing information
       billing_name: formData.name.trim(),

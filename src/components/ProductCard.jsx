@@ -27,7 +27,6 @@ export default function ProductCard({ productId }) {
         console.error('Error fetching product:', error.message);
         setError('Could not load product.');
       } else {
-        // Safely get the public URL or fallback
         let imageUrl = DefaultProductImage;
         if (data.product_image) {
           const { data: imageData, error: imageError } = supabase
@@ -51,7 +50,7 @@ export default function ProductCard({ productId }) {
           image: imageUrl,
           category: data.category,
           rating: data.rating || 4.5,
-          inStock: data.in_stock !== false, // Default to true if not specified
+          inStock: data.in_stock !== false,
         };
         setProduct(productData);
       }
@@ -68,30 +67,28 @@ export default function ProductCard({ productId }) {
   const toggleFavorite = (e) => {
     e.stopPropagation();
     setIsFavorite(!isFavorite);
-    // Here you would typically call an API to save this preference
   };
 
   const handleQuickView = (e) => {
     e.stopPropagation();
-    // Could open a modal with product details
     navigate(`/product/${productId}`);
   };
 
   if (loading) {
     return (
-      <div className="product-card product-card-skeleton">
-        <div className="skeleton-image"></div>
-        <div className="skeleton-content">
-          <div className="skeleton-title"></div>
-          <div className="skeleton-text"></div>
-          <div className="skeleton-price"></div>
+      <div className="product-card product-card--skeleton">
+        <div className="product-card__skeleton-image"></div>
+        <div className="product-card__skeleton-content">
+          <div className="product-card__skeleton-title"></div>
+          <div className="product-card__skeleton-text"></div>
+          <div className="product-card__skeleton-price"></div>
         </div>
       </div>
     );
   }
 
   if (error) {
-    return <div className="product-card product-card-error">{error}</div>;
+    return <div className="product-card product-card--error">{error}</div>;
   }
 
   return (
@@ -100,41 +97,38 @@ export default function ProductCard({ productId }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className="product-card-inner"
-        onClick={handleCardClick}
-      >
-        <div className="product-image-container">
+      <div className="product-card__inner" onClick={handleCardClick}>
+        <div className="product-card__image-container">
           <img
             src={product.image}
             alt={product.name}
-            className="product-image"
+            className="product-card__image"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = DefaultProductImage;
             }}
           />
-          
+
           {product.discount && (
-            <div className="discount-badge">-{product.discount} OFF</div>
+            <div className="product-card__discount-badge">-{product.discount} OFF</div>
           )}
-          
+
           {!product.inStock && (
-            <div className="out-of-stock-overlay">
+            <div className="product-card__out-of-stock-overlay">
               <span>Out of Stock</span>
             </div>
           )}
-          
-          <div className={`product-actions ${isHovered ? 'show' : ''}`}>
+
+          <div className={`product-card__actions ${isHovered ? 'product-card__actions--show' : ''}`}>
             <button 
-              className="action-button quick-view-button" 
+              className="product-card__action-btn product-card__quick-view-btn" 
               onClick={handleQuickView}
               aria-label="Quick view"
             >
               <Eye size={18} />
             </button>
             <button 
-              className={`action-button favorite-button ${isFavorite ? 'is-favorite' : ''}`} 
+              className={`product-card__action-btn product-card__favorite-btn ${isFavorite ? 'product-card__favorite--active' : ''}`} 
               onClick={toggleFavorite}
               aria-label="Add to favorites"
             >
@@ -143,51 +137,51 @@ export default function ProductCard({ productId }) {
           </div>
         </div>
 
-        <div className="product-info">
+        <div className="product-card__info">
           {product.category && (
-            <div className="product-category">{product.category}</div>
+            <div className="product-card__category">{product.category}</div>
           )}
-          
-          <h3 className="product-name">{product.name}</h3>
-          
-          <div className="product-rating">
-            <div className="stars">
+
+          <h3 className="product-card__name">{product.name}</h3>
+
+          <div className="product-card__rating">
+            <div className="product-card__stars">
               {[...Array(5)].map((_, i) => (
                 <Star 
                   key={i} 
                   size={14} 
-                  className={i < Math.floor(product.rating) ? 'filled' : 'empty'} 
+                  className={i < Math.floor(product.rating) ? 'product-card__star--filled' : 'product-card__star--empty'} 
                   fill={i < Math.floor(product.rating) ? "#FFB800" : "none"}
                   stroke={i < Math.floor(product.rating) ? "#FFB800" : "#CBD5E0"}
                 />
               ))}
             </div>
-            <span className="rating-value">{product.rating}</span>
+            <span className="product-card__rating-value">{product.rating}</span>
           </div>
-          
+
           {product.shortDescription && (
-            <p className="product-description">{product.shortDescription}</p>
+            <p className="product-card__description">{product.shortDescription}</p>
           )}
-          
-          <div className="product-price-container">
+
+          <div className="product-card__price-container">
             {product.discountPrice ? (
               <>
-                <span className="current-price">₹{product.discountPrice}</span>
-                <span className="original-price">₹{product.price}</span>
+                <span className="product-card__price--current">₹{product.discountPrice}</span>
+                <span className="product-card__price--original">₹{product.price}</span>
               </>
             ) : (
-              <span className="current-price">₹{product.price}</span>
+              <span className="product-card__price--current">₹{product.price}</span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="product-card-footer" onClick={(e) => e.stopPropagation()}>
+      <div className="product-card__footer" onClick={(e) => e.stopPropagation()}>
         <AddToCartButton 
           productId={product.id} 
           quantity={1} 
           disabled={!product.inStock}
-          className="add-to-cart-button"
+          className="product-card__add-to-cart-btn"
         >
           <ShoppingCart size={16} />
           <span>{product.inStock ? 'Add to Cart' : 'Out of Stock'}</span>
