@@ -305,7 +305,6 @@ window.debugCCAvenue = () => {
   return { debug: debug ? JSON.parse(debug) : null, error: error ? JSON.parse(error) : null };
 };
 
-// FIXED: More robust CCAvenue form submission
 // FIXED: Updated submitToCCAvenue function
 const submitToCCAvenue = (encRequest, accessCode) => {
   return new Promise((resolve, reject) => {
@@ -313,12 +312,12 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       console.log('🔧 Starting CCAvenue form submission...');
       console.log('📊 encRequest length:', encRequest?.length);
       console.log('🔑 accessCode:', accessCode);
-      
+
       // Validate inputs
       if (!encRequest || typeof encRequest !== 'string' || encRequest.trim().length === 0) {
         throw new Error('Invalid encRequest: empty or not a string');
       }
-      
+
       if (!accessCode || typeof accessCode !== 'string' || accessCode.trim().length === 0) {
         throw new Error('Invalid accessCode: empty or not a string');
       }
@@ -334,38 +333,30 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       form.action = 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
       form.target = '_self';
       form.style.display = 'none';
-      
-      // CRITICAL: Set proper encoding for CCAvenue
       form.enctype = 'application/x-www-form-urlencoded';
       form.acceptCharset = 'UTF-8';
 
-      // Create encRequest input
+      // ✅ URL-encode encRequest before submitting
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
       encInput.name = 'encRequest';
-      encInput.value = encRequest.trim();
+      encInput.value = encodeURIComponent(encRequest.trim()); // ✅ FIXED
 
-      // Create access_code input
       const accessInput = document.createElement('input');
       accessInput.type = 'hidden';
       accessInput.name = 'access_code';
       accessInput.value = accessCode.trim();
 
-      // Append inputs to form
       form.appendChild(encInput);
       form.appendChild(accessInput);
-
-      // Append form to body
       document.body.appendChild(form);
 
-      // Debug: Log the final form before submission
+      // Debug: Log the final form
       console.log('✅ Form created successfully:');
       console.log('- Action:', form.action);
-      console.log('- Method:', form.method);
-      console.log('- encRequest length:', encInput.value.length);
+      console.log('- encRequest (encoded):', encInput.value.substring(0, 80) + '...');
       console.log('- access_code:', accessInput.value);
 
-      // Submit form
       setTimeout(() => {
         try {
           console.log('🚀 Submitting form to CCAvenue...');
@@ -377,13 +368,13 @@ const submitToCCAvenue = (encRequest, accessCode) => {
           reject(new Error(`Form submission failed: ${submitError.message}`));
         }
       }, 100);
-
     } catch (err) {
       console.error('❌ Error in submitToCCAvenue:', err);
       reject(new Error(`CCAvenue submission setup failed: ${err.message}`));
     }
   });
 };
+
   // Listen for payment completion messages
   useEffect(() => {
     const handlePaymentMessage = (event) => {
