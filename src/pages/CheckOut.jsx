@@ -313,7 +313,6 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       console.log('📊 encRequest length:', encRequest?.length);
       console.log('🔑 accessCode:', accessCode);
 
-      // Validate inputs
       if (!encRequest || typeof encRequest !== 'string' || encRequest.trim().length === 0) {
         throw new Error('Invalid encRequest: empty or not a string');
       }
@@ -322,11 +321,9 @@ const submitToCCAvenue = (encRequest, accessCode) => {
         throw new Error('Invalid accessCode: empty or not a string');
       }
 
-      // Remove any existing CCAvenue forms
       const existingForms = document.querySelectorAll('form[data-ccavenue-form="true"]');
       existingForms.forEach(form => form.remove());
 
-      // Create the form
       const form = document.createElement('form');
       form.setAttribute('data-ccavenue-form', 'true');
       form.method = 'POST';
@@ -336,11 +333,11 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       form.enctype = 'application/x-www-form-urlencoded';
       form.acceptCharset = 'UTF-8';
 
-      // ✅ URL-encode encRequest before submitting
+      // ✅ Do NOT URL-encode — must be raw Base64
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
       encInput.name = 'encRequest';
-      encInput.value = encodeURIComponent(encRequest.trim()); // ✅ FIXED
+      encInput.value = encRequest.trim(); // ✅ RAW Base64 only
 
       const accessInput = document.createElement('input');
       accessInput.type = 'hidden';
@@ -351,20 +348,17 @@ const submitToCCAvenue = (encRequest, accessCode) => {
       form.appendChild(accessInput);
       document.body.appendChild(form);
 
-      // Debug: Log the final form
-      console.log('✅ Form created successfully:');
-      console.log('- Action:', form.action);
-      console.log('- encRequest (encoded):', encInput.value.substring(0, 80) + '...');
-      console.log('- access_code:', accessInput.value);
+      console.log('✅ Form created and ready to submit');
+      console.log('- encRequest:', encInput.value.substring(0, 100) + '...');
+      console.log('- accessCode:', accessInput.value);
 
       setTimeout(() => {
         try {
-          console.log('🚀 Submitting form to CCAvenue...');
           form.submit();
           console.log('✅ Form submitted successfully');
           resolve();
         } catch (submitError) {
-          console.error('❌ Form submission error:', submitError);
+          console.error('❌ Submission error:', submitError);
           reject(new Error(`Form submission failed: ${submitError.message}`));
         }
       }, 100);
