@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Award, Users, Shield } from 'lucide-react';
 import Photo from "../assets/GCMT-logo.png";
+import arya from "../assets/ARYA PATEL GCMT.jpg";
 import "../styles/AboutPage.css";
 
 export default function AboutPage() {
@@ -99,7 +100,7 @@ export default function AboutPage() {
             ].map(({ name, role }) => (
               <div key={name} className="aboutus-team-member text-center">
                 <div className="aboutus-team-photo w-48 h-48 rounded-full overflow-hidden mx-auto mb-6">
-                  <img src={Photo} alt={name} className="w-full h-full object-cover" />
+                  <img src={arya} alt={name} className="w-full h-full object-cover" />
                 </div>
                 <h3 className="aboutus-team-name text-xl font-bold text-gray-900 mb-1">
                   {name}
