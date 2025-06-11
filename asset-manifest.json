@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.f33ea4f9.css",
-    "main.js": "/static/js/main.2a0ef18f.js",
+    "main.css": "/static/css/main.3ce2b383.css",
+    "main.js": "/static/js/main.7c8ce400.js",
     "static/js/952.26b32017.chunk.js": "/static/js/952.26b32017.chunk.js",
     "static/js/239.90b17eff.chunk.js": "/static/js/239.90b17eff.chunk.js",
     "static/js/977.f26c5ab6.chunk.js": "/static/js/977.f26c5ab6.chunk.js",
@@ -12,8 +12,8 @@
     "static/media/ARYA PATEL GCMT.jpg": "/static/media/ARYA PATEL GCMT.32739331b74e665ab7ae.jpg",
     "static/media/product.jpg": "/static/media/product.c5d6ad53d97464a296b6.jpg",
     "index.html": "/index.html",
-    "main.f33ea4f9.css.map": "/static/css/main.f33ea4f9.css.map",
-    "main.2a0ef18f.js.map": "/static/js/main.2a0ef18f.js.map",
+    "main.3ce2b383.css.map": "/static/css/main.3ce2b383.css.map",
+    "main.7c8ce400.js.map": "/static/js/main.7c8ce400.js.map",
     "952.26b32017.chunk.js.map": "/static/js/952.26b32017.chunk.js.map",
     "239.90b17eff.chunk.js.map": "/static/js/239.90b17eff.chunk.js.map",
     "977.f26c5ab6.chunk.js.map": "/static/js/977.f26c5ab6.chunk.js.map",
@@ -21,7 +21,7 @@
     "453.905f22d3.chunk.js.map": "/static/js/453.905f22d3.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.f33ea4f9.css",
-    "static/js/main.2a0ef18f.js"
+    "static/css/main.3ce2b383.css",
+    "static/js/main.7c8ce400.js"
   ]
 }
