@@ -201,25 +201,24 @@ const handlePayment = async () => {
     // const ACCESS_CODE = 'AVNS75ME47CK48SNKC';
     
     // Prepare request body - REMOVE merchant_id from here
-    const requestBody = {
-      order_id: orderId,
-      amount: total.toFixed(2),
-      currency: 'INR',
-      redirect_url: 'https://gcmtshop.com/#/payment-success',
-      cancel_url: 'https://gcmtshop.com/#/payment-cancel',
-      language: 'EN',
-      // Essential billing information
-      billing_name: formData.name.trim(),
-      billing_address: formData.street.trim(),
-      billing_city: formData.city.trim(),
-      billing_state: formData.state.trim(),
-      billing_zip: formData.pincode.trim(),
-      billing_country: 'India',
-      billing_tel: formData.phone.trim(),
-      billing_email: formData.email.trim().toLowerCase(),
-      // Merchant parameters
-      merchant_param1: savedOrderId.toString(),
-    };
+const requestBody = {
+  order_id: orderId,
+  amount: total.toFixed(2),
+  currency: 'INR',
+  redirect_url: 'https://gcmtshop.com/api/paymentResponse',
+  cancel_url: 'https://gcmtshop.com/#/payment-cancel',
+  language: 'EN',
+  billing_name: formData.name.trim(),
+  billing_address: formData.street.trim(),
+  billing_city: formData.city.trim(),
+  billing_state: formData.state.trim(),
+  billing_zip: formData.pincode.trim(),
+  billing_country: 'India',
+  billing_tel: formData.phone.trim(),
+  billing_email: formData.email.trim().toLowerCase(),
+  merchant_param1: savedOrderId.toString(),
+  merchant_param2: user?.id || localStorage.getItem('guest_identifier') || 'guest',
+};
 
     console.log('🚀 Initiating payment with request:', requestBody);
 

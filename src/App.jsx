@@ -20,7 +20,12 @@ import Tnc from "./pages/TnC"; // Terms and Conditions page
 import Footer from "./components/Footer"; // Import Footer component
 import ScrollToTop from './components/ScrollToTop';
 import ThankYou from "./pages/ThankYou"; // Import ThankYou component
-import { PaymentSuccess, PaymentCancel, OrderConfirmation } from './pages/PaymentPages';
+import AdminOrder from "./pages/AdminOrder"; // Import AdminPage component
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel"; // Import PaymentCancel component
+import AdminLanding from "./pages/AdminPage";
+import AdminSubscription from "./pages/AdminSubscription";
+import AdminContactForm from "./pages/AdminContactForm";
 import "./App.css";
 
 function App() {
@@ -54,7 +59,10 @@ function App() {
                 <Route path="/thankyou" element={<ThankYou />} /> {/* Fallback ThankYou page */}
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-cancel" element={<PaymentCancel />} />
-                <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+                <Route path="/admin-order" element={<AdminOrder />} />
+                <Route path="/admin-landing" element={<AdminLanding />} />
+                <Route path="/admin-subscription" element={<AdminSubscription />} />
+                <Route path="/admin-contactform" element={<AdminContactForm />} />
                 {/* Add more routes as needed */}
                 
                 {/* Catch-all route for 404s */}

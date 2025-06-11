@@ -112,7 +112,7 @@ html {
 
 /* Announcement Bar */
 .announcement-bar {
-  background: hsl(240, 100%, 61%);
+  background: hsl(240, 100%, 35%);
   color: white;
   text-align: center;
   padding: var(--spacing-xs) var(--spacing-sm);

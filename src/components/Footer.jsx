@@ -1,7 +1,28 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Instagram } from 'lucide-react';
 import logo from '../assets/GCMT-logo.png';
+import { supabase } from '../supabaseClient';
 import '../styles/Footer.css'; // Ensure the CSS uses these new class names
+
+
+const handleSubscribe = async () => {
+  const emailInput = document.querySelector('.footer-ec-input');
+  const email = emailInput.value.trim();
+
+  if (!email) return alert('Please enter a valid email');
+
+  const { data, error } = await supabase
+    .from('newsletter_subscriptions')
+    .insert([{ email }]);
+
+  if (error) {
+    console.error('Subscription error:', error.message);
+    alert('Subscription failed. Please try again.');
+  } else {
+    alert('Thank you for subscribing!');
+    emailInput.value = '';
+  }
+};
 
 const Footer = () => {
   return (
@@ -74,7 +95,10 @@ const Footer = () => {
                 placeholder="Enter your email"
                 className="footer-ec-input flex-1 px-4 py-2 rounded-l-md text-gray-800"
               />
-              <button className="footer-ec-button bg-green-600 hover:bg-green-500 px-6 py-2 rounded-r-md font-medium">
+              <button
+                onClick={handleSubscribe}
+                className="footer-ec-button bg-green-600 hover:bg-green-500 px-6 py-2 rounded-r-md font-medium"
+              >
                 Subscribe
               </button>
             </div>
