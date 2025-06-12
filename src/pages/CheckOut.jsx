@@ -16,6 +16,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
   const [savedOrderId, setSavedOrderId] = useState(null);
+  const [paymentId, setPaymentId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -148,36 +149,41 @@ export default function Checkout() {
         total_price: i.price * i.quantity,
       }));
 
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([
-          {
-            user_id: user?.id || null,
-            user_name: formData.name.trim(),
-            user_email: formData.email.trim().toLowerCase(),
-            user_phone: formData.phone.trim(),
-            address_line: formData.street.trim(),
-            city: formData.city.trim(),
-            state: formData.state.trim(),
-            postal_code: formData.pincode.trim(),
-            product_list,
-            total_amount: total,
-            payment_status: 'PENDING',
-            order_status: 'PROCESSING',
-            created_at: new Date().toISOString(),
-          },
-        ])
-        .select('id')
-        .single();
+const generatedPaymentId = crypto.randomUUID();
 
-      if (error) throw error;
+const { data, error } = await supabase
+  .from('orders')
+  .insert([
+    {
+      user_id: user?.id || null,
+      user_name: formData.name.trim(),
+      user_email: formData.email.trim().toLowerCase(),
+      user_phone: formData.phone.trim(),
+      address_line: formData.street.trim(),
+      city: formData.city.trim(),
+      state: formData.state.trim(),
+      postal_code: formData.pincode.trim(),
+      product_list,
+      total_amount: total,
+      payment_status: 'PENDING',
+      order_status: 'PROCESSING',
+      created_at: new Date().toISOString(),
+      payment_id: generatedPaymentId,
+    },
+  ])
+  .select('id, payment_id')
+  .single();
 
-      setSavedOrderId(data.id);
-      setContactSaved(true);
-      showToast('Contact info saved! You may now proceed to payment.', 'success');
-    } catch (err) {
-      console.error('Save contact info error:', err.message);
-      showToast('Failed to save contact info. Please try again.', 'error');
+if (error) throw error;
+
+setSavedOrderId(data.id);
+setPaymentId(data.payment_id); // NEW: Track payment_id for use in payment
+setContactSaved(true);
+showToast('Contact info saved! You may now proceed to payment.', 'success');
+    }
+    catch (err) {
+      console.error('Error saving contact info:', err);
+      showToast(`Failed to save contact info: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -194,7 +200,7 @@ const handlePayment = async () => {
   setLoading(true);
   try {
     // Create a simple, unique order ID
-    const orderId = `ORD${savedOrderId}`;
+    const orderId = paymentId; // Use UUID payment_id as orderId
     
     // ❌ REMOVE THESE HARDCODED VALUES - Let backend handle credentials
     // const MERCHANT_ID = '4311301';
@@ -205,7 +211,7 @@ const requestBody = {
   order_id: orderId,
   amount: total.toFixed(2),
   currency: 'INR',
-  redirect_url: 'https://gcmtshop.com/api/paymentResponse',
+  redirect_url: 'https://gcmtshop-cca-backend.vercel.app/api/paymentResponse',
   cancel_url: 'https://gcmtshop.com/#/payment-cancel',
   language: 'EN',
   billing_name: formData.name.trim(),
