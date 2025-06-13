@@ -1,30 +1,32 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import '../styles/Toast.css'; // we’ll create this next
 
 const ToastContext = createContext();
 
-export function ToastProvider({ children }) {
-  const [toast, setToast] = useState({ message: '', type: '', visible: false });
+export const useToast = () => useContext(ToastContext);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type, visible: true });
+export const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, type = 'success', duration = 3000) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
 
     setTimeout(() => {
-      setToast(prev => ({ ...prev, visible: false }));
-    }, 3000);
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, duration);
   };
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {toast.visible && (
-        <div className={`toast ${toast.type}`}>
-          {toast.message}
-        </div>
-      )}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast ${toast.type}`}>
+            {toast.message}
+          </div>
+        ))}
+      </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  return useContext(ToastContext);
-}
+};

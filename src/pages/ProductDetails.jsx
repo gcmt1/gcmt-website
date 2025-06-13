@@ -12,6 +12,7 @@ import AddToCartButton from '../components/AddToCartButton';
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -20,111 +21,415 @@ const ProductDetail = () => {
   const [selectedTab, setSelectedTab] = useState('description');
   const [selectedVariant, setSelectedVariant] = useState('');
   const [showCertModal, setShowCertModal] = useState(false);
+  
+  // Review system state variables (these were missing)
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newRating, setNewRating] = useState(0);
+  const [newReviewText, setNewReviewText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [user, setUser] = useState(null);
+  
+  // Edit/Delete review state
+  const [editingReview, setEditingReview] = useState(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editReviewText, setEditReviewText] = useState('');
+  const [editHoverRating, setEditHoverRating] = useState(0);
+  const [deletingReview, setDeletingReview] = useState(null);
+
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getCurrentUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
-    async function fetchProduct() {
+    async function fetchProductAndReviews() {
       try {
-        const { data, error } = await supabase
+        setLoading(true);
+        setError(null);
+
+        // Fetch product
+        const { data: prodData, error: prodErr } = await supabase
           .from('products')
           .select('*')
           .eq('id', id)
           .single();
 
-        if (error) {
-          setError('Unable to load product information.');
-          return;
-        }
+        if (prodErr) throw prodErr;
 
         // Process the data
-        const variants = data.size
-          ? data.size.split(',').map(v => v.trim())
+        const variants = prodData.size 
+          ? prodData.size.split(',').map(v => v.trim()) 
           : [];
 
-        // ─── KEY BENEFITS ───────────────────────────────────────────────────────────
-        // Supabase/Postgres often returns an array‐literal like {"Benefit A","Benefit B",…}
-        // so we strip off { } and " first, then split on commas.
-        const rawBenefits = data.key_benefits || '';
-        const cleanedBenefits = rawBenefits.replace(/[\{\}"]/g, ''); 
-        const benefits = cleanedBenefits
-          ? cleanedBenefits.split(',').map(b => b.trim())
+        // Process key benefits - handle Postgres array format
+        const rawBenefits = prodData.key_benefits || '';
+        const cleanedBenefits = rawBenefits.replace(/[\{\}"]/g, '');
+        const benefits = cleanedBenefits 
+          ? cleanedBenefits.split(',').map(b => b.trim()) 
           : [];
-          
-        // ─── INGREDIENTS ────────────────────────────────────────────────────────────
-        const ingredients = data.ingredients_name
-          ? data.ingredients_name.split(',').map((name, i) => ({
+
+        // Process ingredients
+        const ingredients = prodData.ingredients_name
+          ? prodData.ingredients_name.split(',').map((name, i) => ({
               name: name.trim(),
-              percentage: data.percentage?.split(',')[i]?.trim() || ''
+              percentage: prodData.percentage?.split(',')[i]?.trim() || ''
             }))
           : [];
 
-        setProduct({
-          id: data.id,
-          name: data.product_name,
-          shortDescription: data.product_sub_description,
-          price: data.product_price,
-          discountPrice: +(data.product_price * (1 - (data.product_discount || 0) / 100)).toFixed(2),
-          discount: data.product_discount ? `${data.product_discount}%` : null,
-          rating: 4.5, // Example static value
-          reviews: 123, // Example static value
-          stock: 50,    // Example static value
+        // Calculate discount price
+        const discountPrice = prodData.product_discount 
+          ? +(prodData.product_price * (1 - prodData.product_discount / 100)).toFixed(2)
+          : prodData.product_price;
+
+        const productData = {
+          id: prodData.id,
+          name: prodData.product_name,
+          shortDescription: prodData.product_sub_description,
+          price: prodData.product_price,
+          discountPrice,
+          discount: prodData.product_discount ? `${prodData.product_discount}%` : null,
+          rating: 4.5, // Default value
+          reviews: 0, // Will be updated with actual review count
+          stock: prodData.stock || 50, // Default stock if not provided
           sku: id,
-          images: data.product_image ? [data.product_image] : ['/api/placeholder/500/500'],
+          images: prodData.product_image ? [prodData.product_image] : ['/api/placeholder/500/500'],
           variants,
           benefits,
-          descriptionContent: data.product_description,
-          whyChoose: data.why_choose_product,
-          ingredientsHeading: data.ingredients_heading,
-          ingredientsDescription: data.ingredients_description,
-          ingredientsSubheading: data.ingredients_subheading,
+          descriptionContent: prodData.product_description,
+          whyChoose: prodData.why_choose_product,
+          ingredientsHeading: prodData.ingredients_heading,
+          ingredientsDescription: prodData.ingredients_description,
+          ingredientsSubheading: prodData.ingredients_subheading,
           ingredients,
-          howToUseHeading: data.how_to_use_heading,
-          howToUseDescription: data.how_to_use_description,
-          proTips: data.pro_tips,
-          certifications: [],
-        });
-        
+          howToUseHeading: prodData.how_to_use_heading,
+          howToUseDescription: prodData.how_to_use_description,
+          proTips: prodData.pro_tips,
+          certifications: [], // Empty array as default
+        };
+
+        setProduct(productData);
         setSelectedVariant(variants[0] || '');
+
+        // Fetch reviews
+        const { data: revData, error: revErr } = await supabase
+          .from('product_reviews')
+          .select('id, user_name, rating, review_text, created_at, user_id')
+          .eq('product_id', id)
+          .order('created_at', { ascending: false });
+
+        if (revErr) {
+          console.warn('Error fetching reviews:', revErr);
+          // Don't throw error for reviews, just continue
+        } else {
+          setReviews(revData || []);
+          // Update product with actual review count
+          setProduct(prev => ({
+            ...prev,
+            reviews: revData?.length || 0
+          }));
+        }
+
       } catch (err) {
-        setError('An unexpected error occurred.');
-        console.error(err);
+        console.error('Error fetching product:', err);
+        setError('Unable to load product information.');
       } finally {
         setLoading(false);
       }
     }
-    
-    fetchProduct();
+
+    if (id) {
+      fetchProductAndReviews();
+    }
   }, [id]);
 
-  if (loading) return (
-    <div className="product-container">
-      <div className="loading-spinner">Loading product information...</div>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="product-container">
-      <div className="error-message">{error}</div>
-      <button className="btn-primary" onClick={() => window.history.back()}>
-        Go Back
-      </button>
-    </div>
-  );
+  const renderStars = (rating, isInteractive = false, isEdit = false) =>
+    Array(5)
+      .fill(0)
+      .map((_, i) => {
+        const starIndex = i + 1;
+        let filled;
+        
+        if (isEdit) {
+          filled = starIndex <= (editHoverRating || editRating);
+        } else if (isInteractive) {
+          filled = starIndex <= (hoverRating || newRating);
+        } else {
+          filled = i < rating;
+        }
+        
+        return (
+          <Star
+            key={i}
+            size={20}
+            fill={filled ? '#FFB800' : 'none'}
+            stroke={filled ? '#FFB800' : '#8B8B8B'}
+            className={isInteractive || isEdit ? 'cursor-pointer' : ''}
+            onMouseEnter={
+              isEdit 
+                ? () => setEditHoverRating(starIndex)
+                : isInteractive 
+                  ? () => setHoverRating(starIndex) 
+                  : undefined
+            }
+            onMouseLeave={
+              isEdit 
+                ? () => setEditHoverRating(0)
+                : isInteractive 
+                  ? () => setHoverRating(0) 
+                  : undefined
+            }
+            onClick={
+              isEdit 
+                ? () => setEditRating(starIndex)
+                : isInteractive 
+                  ? () => setNewRating(starIndex) 
+                  : undefined
+            }
+          />
+        );
+      });
 
-  const decreaseQuantity = () => quantity > 1 && setQuantity(q => q - 1);
-  const increaseQuantity = () => quantity < product.stock && setQuantity(q => q + 1);
-  
-  const addToWishlist = () => setWishlistAdded(w => !w);
+  const handleReviewSubmit = async () => {
+    // Clear previous errors
+    setSubmitError('');
+    
+    if (!user) {
+      setSubmitError('Please sign in to submit a review.');
+      return;
+    }
+    
+    if (newRating < 1) {
+      setSubmitError('Please select a rating.');
+      return;
+    }
+    
+    if (!newReviewText.trim()) {
+      setSubmitError('Please write a review.');
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      const userName =
+        user.user_metadata?.full_name
+          ? user.user_metadata.full_name
+          : user.email
+        ? user.email.split('@')[0]
+        : 'Anonymous';
 
-  const renderStars = (rating) =>
-    Array(5).fill(0).map((_, i) => (
-      <Star
-        key={i}
-        size={16}
-        className={`star ${i < Math.floor(rating) ? 'filled' : ''}`}
-        fill={i < rating ? "#FFB800" : "none"}
-        stroke={i < rating ? "#FFB800" : "#8B8B8B"}
-      />
-    ));
+      const { error: insertErr } = await supabase
+        .from('product_reviews')
+        .insert({
+          product_id: id,
+          user_id: user.id,
+          user_name: userName,
+          rating: newRating,
+          review_text: newReviewText.trim()
+        });
+        
+      if (insertErr) throw insertErr;
+      
+      // Refresh reviews after successful submission
+      const { data: revData } = await supabase
+        .from('product_reviews')
+        .select('id, user_name, rating, review_text, created_at, user_id')
+        .eq('product_id', id)
+        .order('created_at', { ascending: false });
+        
+      setReviews(revData || []);
+      
+      // Update product review count
+      setProduct(prev => ({
+        ...prev,
+        reviews: revData?.length || 0
+      }));
+      
+      // Reset form
+      setNewRating(0);
+      setNewReviewText('');
+      setHoverRating(0);
+      setSubmitError('');
+      
+      // Show success message (optional)
+      alert('Review submitted successfully!');
+      
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      setSubmitError('Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditReview = (review) => {
+    setEditingReview(review.id);
+    setEditRating(review.rating);
+    setEditReviewText(review.review_text);
+    setEditHoverRating(0);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReview(null);
+    setEditRating(0);
+    setEditReviewText('');
+    setEditHoverRating(0);
+  };
+
+  const handleUpdateReview = async (reviewId) => {
+    if (editRating < 1) {
+      alert('Please select a rating.');
+      return;
+    }
+    
+    if (!editReviewText.trim()) {
+      alert('Please write a review.');
+      return;
+    }
+
+    try {
+      const { error: updateErr } = await supabase
+        .from('product_reviews')
+        .update({
+          rating: editRating,
+          review_text: editReviewText.trim(),
+        })
+        .eq('id', reviewId)
+        .eq('user_id', user.id); // Ensure user can only edit their own reviews
+
+      if (updateErr) throw updateErr;
+
+      // Refresh reviews
+      const { data: revData } = await supabase
+        .from('product_reviews')
+        .select('id, user_name, rating, review_text, created_at, user_id')
+        .eq('product_id', id)
+        .order('created_at', { ascending: false });
+        
+      setReviews(revData || []);
+      
+      // Reset edit state
+      setEditingReview(null);
+      setEditRating(0);
+      setEditReviewText('');
+      setEditHoverRating(0);
+      
+      alert('Review updated successfully!');
+      
+    } catch (err) {
+      console.error('Error updating review:', err);
+      alert('Failed to update review. Please try again.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) {
+      return;
+    }
+
+    setDeletingReview(reviewId);
+
+    try {
+      const { error: deleteErr } = await supabase
+        .from('product_reviews')
+        .delete()
+        .eq('id', reviewId)
+        .eq('user_id', user.id); // Ensure user can only delete their own reviews
+
+      if (deleteErr) throw deleteErr;
+
+      // Refresh reviews
+      const { data: revData } = await supabase
+        .from('product_reviews')
+        .select('id, user_name, rating, review_text, created_at, user_id')
+        .eq('product_id', id)
+        .order('created_at', { ascending: false });
+        
+      setReviews(revData || []);
+      
+      // Update product review count
+      setProduct(prev => ({
+        ...prev,
+        reviews: revData?.length || 0
+      }));
+      
+      alert('Review deleted successfully!');
+      
+    } catch (err) {
+      console.error('Error deleting review:', err);
+      alert('Failed to delete review. Please try again.');
+    } finally {
+      setDeletingReview(null);
+    }
+  };
+
+  const decreaseQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(q => q - 1);
+    }
+  };
+
+  const increaseQuantity = () => {
+    if (quantity < product?.stock) {
+      setQuantity(q => q + 1);
+    }
+  };
+  
+  const addToWishlist = () => {
+    setWishlistAdded(w => !w);
+  };
+
+  const handleImageNavigation = (direction) => {
+    if (!product?.images?.length) return;
+    
+    if (direction === 'prev') {
+      setActiveImage(i => (i - 1 + product.images.length) % product.images.length);
+    } else {
+      setActiveImage(i => (i + 1) % product.images.length);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="product-container">
+        <div className="loading-spinner">Loading product information...</div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="product-container">
+        <div className="error-message">{error}</div>
+        <button className="btn-primary" onClick={() => window.history.back()}>
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="product-container">
+        <div className="error-message">Product not found.</div>
+        <button className="btn-primary" onClick={() => window.history.back()}>
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="product-page">
@@ -139,8 +444,9 @@ const ProductDetail = () => {
             <div className="gallery-main">
               <button 
                 className="gallery-nav prev"
-                onClick={() => setActiveImage(i => (i - 1 + product.images.length) % product.images.length)}
+                onClick={() => handleImageNavigation('prev')}
                 aria-label="Previous image"
+                disabled={product.images.length <= 1}
               >
                 <ArrowLeft size={20} />
               </button>
@@ -158,8 +464,9 @@ const ProductDetail = () => {
               
               <button 
                 className="gallery-nav next"
-                onClick={() => setActiveImage(i => (i + 1) % product.images.length)}
+                onClick={() => handleImageNavigation('next')}
                 aria-label="Next image"
+                disabled={product.images.length <= 1}
               >
                 <ArrowRight size={20} />
               </button>
@@ -187,6 +494,7 @@ const ProductDetail = () => {
             <div className="product-meta">
               <div className="product-rating">
                 {renderStars(product.rating)}
+                <span className="rating-count">({product.reviews} reviews)</span>
               </div>
             </div>
             
@@ -367,29 +675,129 @@ const ProductDetail = () => {
           </div>
         </section>
 
-        {/* Related Products */}
-        <section className="related-products">
-          <h2 className="section-title">You May Also Like</h2>
-          <div className="products-grid">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="product-card">
-                <div className="product-card-image">
-                  <img src="/api/placeholder/250/250" alt={`Related Product ${item}`} />
-                </div>
-                <div className="product-card-content">
-                  <h3 className="product-card-title">Ayurvedic Product {item}</h3>
-                  <div className="product-card-rating">
-                    {renderStars(4.5)}
-                    <span>(98)</span>
-                  </div>
-                  <div className="product-card-price">
-                    <span className="current-price">₹799</span>
-                    <span className="original-price">₹999</span>
-                  </div>
-                  <button className="product-card-btn">Add to Cart</button>
-                </div>
+        {/* Reviews Section */}
+        <section className="reviews-section">
+          <h2>Customer Reviews ({reviews.length})</h2>
+          
+          {/* Review Form */}
+          <div className="review-form">
+            <h3>Write a Review</h3>
+            
+            <div className="star-input">
+              <label>Rating:</label>
+              <div className="stars-container">
+                {renderStars(newRating, true)}
               </div>
-            ))}
+            </div>
+            
+            <textarea
+              placeholder="Write your review here..."
+              value={newReviewText}
+              onChange={(e) => setNewReviewText(e.target.value)}
+              rows={4}
+              className="review-textarea"
+            />
+            
+            {submitError && <p className="error-text">{submitError}</p>}
+            
+            <button
+              onClick={handleReviewSubmit}
+              disabled={submitting}
+              className="btn-submit"
+            >
+              {submitting ? 'Submitting...' : 'Submit Review'}
+            </button>
+            
+            {!user && (
+              <p className="auth-notice">Please sign in to submit a review.</p>
+            )}
+          </div>
+
+          {/* Existing Reviews */}
+          <div className="reviews-list">
+            {reviews.length === 0 ? (
+              <p>No reviews yet. Be the first to review this product!</p>
+            ) : (
+              reviews.map((rev) => (
+                <div key={rev.id} className="review-card">
+                  {editingReview === rev.id ? (
+                    // Edit Mode
+                    <div className="review-edit-form">
+                      <div className="review-header">
+                        <strong>{rev.user_name}</strong>
+                        <span className="review-date">
+                          {new Date(rev.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      <div className="star-input">
+                        <label>Rating:</label>
+                        <div className="stars-container">
+                          {renderStars(editRating, false, true)}
+                        </div>
+                      </div>
+                      
+                      <textarea
+                        value={editReviewText}
+                        onChange={(e) => setEditReviewText(e.target.value)}
+                        rows={3}
+                        className="review-textarea"
+                        placeholder="Update your review..."
+                      />
+                      
+                      <div className="review-edit-actions">
+                        <button
+                          onClick={() => handleUpdateReview(rev.id)}
+                          className="btn-save"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="btn-cancel"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View Mode
+                    <>
+                      <div className="review-header">
+                        <strong>{rev.user_name}</strong>
+                        <span className="review-date">
+                          {new Date(rev.created_at).toLocaleDateString()}
+                        </span>
+                        
+                        {/* Show edit/delete buttons only for user's own reviews */}
+                        {user && rev.user_id === user.id && (
+                          <div className="review-actions">
+                            <button
+                              onClick={() => handleEditReview(rev)}
+                              className="btn-edit"
+                              title="Edit review"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview(rev.id)}
+                              className="btn-delete"
+                              title="Delete review"
+                              disabled={deletingReview === rev.id}
+                            >
+                              {deletingReview === rev.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="review-rating">{renderStars(rev.rating)}</div>
+                      {rev.review_text && <p className="review-text">{rev.review_text}</p>}
+                    </>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

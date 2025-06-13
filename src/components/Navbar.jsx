@@ -156,17 +156,17 @@ export default function NavBar() {
             }`}
           >
             <ul className="gcmt-navbar__links">
-              {['Home','Products','About','Blog','Contact','FAQ'].map(label => (
-                <li key={label}>
-            <a
-              href={`#/${label.toLowerCase()}`}
-              className="gcmt-navbar__link"
-              onClick={closeMobileMenu}
-            >
-              {label}
-            </a>
-                </li>
-              ))}
+          {['Home','Products','About','Blog','Contact','FAQ', 'Your Orders'].map(label => (
+            <li key={label}>
+              <a
+                href={`#/${label.toLowerCase().replace(/\s+/g, '-')}`}
+                className="gcmt-navbar__link"
+                onClick={closeMobileMenu}
+              >
+                {label}
+              </a>
+            </li>
+          ))}
               
               <li className="gcmt-navbar__mobile-only">
                 {user && !isGuest ? (

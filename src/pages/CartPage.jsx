@@ -172,7 +172,7 @@ function CartPage() {
                       <h3 className="font-medium text-gray-800">{item.name}</h3>
                       <button
                         type="button"
-                        className="mt-2 flex items-center text-sm text-gray-500 hover:text-red-500"
+                        className="remove-button"
                         onClick={() => removeItem(item.productId)}
                         aria-label={`Remove ${item.name} from cart`}
                       >

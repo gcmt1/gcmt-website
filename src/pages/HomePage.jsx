@@ -38,7 +38,7 @@ const HomePage = () => {
     <div className="homepage">
       {/* Announcement Bar */}
       <div className="announcement-bar">
-        <p>Free shipping on your first order | 100% Secure Checkout</p>
+        <p>Free shipping on your first order | 100% Secure Checkout | UPI Transaction Available</p>
       </div>
 
       <section className="hero">

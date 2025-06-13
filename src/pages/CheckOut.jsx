@@ -3,7 +3,6 @@ import { supabase } from '../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../components/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import InvoiceGenerator from '../components/InvoiceGenerator';
 import '../styles/CheckOut.css';
 
 export default function Checkout() {
@@ -211,7 +210,7 @@ const requestBody = {
   order_id: orderId,
   amount: total.toFixed(2),
   currency: 'INR',
-  redirect_url: 'https://gcmtshop-cca-backend.vercel.app/api/paymentResponse',
+  redirect_url: 'https://gcmtshop-cca-backend-kappa.vercel.app/api/paymentResponse',
   cancel_url: 'https://gcmtshop.com/#/payment-cancel',
   language: 'EN',
   billing_name: formData.name.trim(),
@@ -546,14 +545,6 @@ const submitToCCAvenue = (encRequest, accessCode) => {
         </div>
 
         {/* Invoice Preview */}
-        {contactSaved && savedOrderId && (
-          <InvoiceGenerator
-            orderId={savedOrderId}
-            cartItems={cartItems}
-            contactInfo={formData}
-            totalAmount={total}
-          />
-        )}
       </div>
     </div>
   );

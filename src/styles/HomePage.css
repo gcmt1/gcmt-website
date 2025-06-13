@@ -93,12 +93,6 @@ html {
   }
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
@@ -122,11 +116,24 @@ html {
   top: 0;
   z-index: 1000;
   animation: fadeInDown 0.8s ease;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all; /* fallback for Safari */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 2.5em;
 }
 
 .announcement-bar p {
   margin: 0;
   animation: pulse 3s infinite;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-all; /* fallback for Safari */
+  flex: 1 1 0%;
+  flex: 1 1 0%;
 }
 
 /* Hero Section */

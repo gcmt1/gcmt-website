@@ -20,7 +20,6 @@ function AuthPage() {
   const createGuestAccountIfNeeded = async () => {
     const guestId = localStorage.getItem('guest_user_id');
     if (!guestId) {
-      // Generate random guest email and password
       const randomSuffix = Math.random().toString(36).substring(2, 10);
       const guestEmail = `guest_${randomSuffix}@example.com`;
       const guestPassword = Math.random().toString(36).substring(2, 10);
@@ -34,8 +33,6 @@ function AuthPage() {
         console.error('❌ Failed to create guest account:', error);
       } else if (data?.user) {
         const userId = data.user.id;
-
-        // Insert guest profile
         const { error: profileError } = await supabase.from('users').insert({
           id: userId,
           email: guestEmail,
@@ -59,25 +56,37 @@ function AuthPage() {
     }
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name }, // optional metadata
+      },
+    });
 
     if (error) {
       showToast(`❌ ${error.message}`, 'error');
-    } else if (data?.user) {
-      const userId = data.user.id;
-      const { error: profileError } = await supabase.from('users').insert({
-        id: userId,
-        email,
-        name,
-      });
+    } else {
+      showToast('✅ Sign-up successful! Check your email to confirm.', 'success');
 
-      if (profileError) {
-        showToast(`❌ ${profileError.message}`, 'error');
-      } else {
-        showToast('✅ Sign-up successful! Check your email to confirm.', 'success');
-        navigate('/'); // redirect to homepage
+      // Only insert into users table if user is available (confirmation email OFF)
+      if (data.user) {
+        const userId = data.user.id;
+        const { error: profileError } = await supabase.from('users').insert({
+          id: userId,
+          email,
+          name,
+        });
+
+        if (profileError) {
+          showToast(`❌ ${profileError.message}`, 'error');
+        }
       }
+
+      navigate('/');
     }
+
     setLoading(false);
   };
 
@@ -93,8 +102,28 @@ function AuthPage() {
     } else if (data?.session?.user) {
       showToast('✅ Logged in successfully!', 'success');
       await mergeGuestCart(data.session.user.id);
-      navigate('/'); // redirect to homepage
+
+      // 🟢 Check if user profile exists
+      const { data: existing, error: fetchError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', data.session.user.id)
+        .maybeSingle();
+
+      if (!existing && !fetchError) {
+        const { error: insertError } = await supabase.from('users').insert({
+          id: data.session.user.id,
+          email,
+          name: name || '', // optional fallback
+        });
+        if (insertError) {
+          console.error('❌ Failed to insert user profile:', insertError);
+        }
+      }
+
+      navigate('/');
     }
+
     setLoading(false);
   };
 
