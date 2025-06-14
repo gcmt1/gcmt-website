@@ -7,14 +7,24 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    // Disable browser's automatic scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: 'smooth', // Optional: remove 'smooth' if you want instant jump
+      behavior: 'smooth',
     });
+    // Optional cleanup to restore default behavior
+    return () => {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'auto';
+      }
+    };
   }, [pathname]);
 
-  return null; // This component doesn't render anything visible
+  return null;
 };
 
 export default ScrollToTop;

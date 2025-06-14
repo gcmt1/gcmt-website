@@ -26,6 +26,7 @@ export default function GoldOrdersPage() {
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(new Set());
   const [expandedOrders, setExpandedOrders] = useState(new Set());
   const [notification, setNotification] = useState(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -165,6 +166,7 @@ export default function GoldOrdersPage() {
     setShowOrderDetails(false);
     setSelectedOrder(null);
     setEditingOrder(null);
+    setIsViewMode(false); // Reset view mode
   };
 
   const handleSaveOrderChanges = async () => {
@@ -711,20 +713,30 @@ export default function GoldOrdersPage() {
                         </div>
 
                         <div className="admin-page-expanded-actions">
-                          <button
-                            onClick={() => handleOrderClick(order)}
-                            className="admin-page-action-btn admin-page-action-btn-primary"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                            Edit Details
-                          </button>
-                          <button
-                            onClick={() => handleOrderClick(order)}
-                            className="admin-page-action-btn admin-page-action-btn-secondary"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View Full Details
-                          </button>
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setEditingOrder({ ...order });
+                          setIsViewMode(false); // Edit mode
+                          setShowOrderDetails(true);
+                        }}
+                        className="admin-page-action-btn admin-page-action-btn-primary"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit Details
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setEditingOrder({ ...order });
+                          setIsViewMode(true); // View mode
+                          setShowOrderDetails(true);
+                        }}
+                        className="admin-page-action-btn admin-page-action-btn-secondary"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Full Details
+                      </button>
                           <button
                             onClick={() => {
                               setOrderToDelete(order.id);
@@ -752,7 +764,9 @@ export default function GoldOrdersPage() {
           <div className="admin-page-order-details-modal">
             <div className="admin-page-modal-header">
               <div className="admin-page-modal-header-content">
-                <h2 className="admin-page-modal-title">Order #{selectedOrder.id} Details</h2>
+                <h2 className="admin-page-modal-title">
+                  Order #{selectedOrder.id} {isViewMode ? 'Details' : 'Edit'}
+                </h2>
                 <div className="admin-page-modal-status-badges">
                   <span className={`admin-page-payment-badge ${getPaymentStatusColor(selectedOrder.payment_status)}`}>
                     {getStatusIcon(selectedOrder.payment_status)}
@@ -774,7 +788,6 @@ export default function GoldOrdersPage() {
 
             <div className="admin-page-modal-body">
               <div className="admin-page-details-grid">
-                {/* Customer Information */}
                 <div className="admin-page-details-section">
                   <h3 className="admin-page-section-title">Customer Information</h3>
                   <div className="admin-page-form-group">
@@ -784,6 +797,7 @@ export default function GoldOrdersPage() {
                       value={editingOrder.user_name || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, user_name: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div className="admin-page-form-group">
@@ -793,6 +807,7 @@ export default function GoldOrdersPage() {
                       value={editingOrder.user_email || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, user_email: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div className="admin-page-form-group">
@@ -802,6 +817,7 @@ export default function GoldOrdersPage() {
                       value={editingOrder.user_phone || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, user_phone: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div className="admin-page-form-group">
@@ -811,6 +827,7 @@ export default function GoldOrdersPage() {
                       value={editingOrder.address_line || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, address_line: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div className="admin-page-form-group">
@@ -820,6 +837,7 @@ export default function GoldOrdersPage() {
                       value={editingOrder.city || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, city: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div className="admin-page-form-group">
@@ -829,6 +847,7 @@ export default function GoldOrdersPage() {
                       value={editingOrder.state || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, state: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div className="admin-page-form-group">
@@ -838,10 +857,10 @@ export default function GoldOrdersPage() {
                       value={editingOrder.postal_code || ''}
                       onChange={(e) => setEditingOrder({...editingOrder, postal_code: e.target.value})}
                       className="admin-page-form-input"
+                      disabled={isViewMode}
                     />
                   </div>
                 </div>
-                {/* Order Items */}
                 <div className="admin-page-details-section">
                   <h3 className="admin-page-section-title">Order Items</h3>
                   <div className="admin-page-items-list">
@@ -874,38 +893,57 @@ export default function GoldOrdersPage() {
                 <div className="admin-page-details-section">
                   <h3 className="admin-page-section-title">Order Status</h3>
                   <div className="admin-page-status-select">
-                    <select
-                      value={editingOrder.order_status}
-                      onChange={(e) => setEditingOrder({...editingOrder, order_status: e.target.value})}
-                      className="admin-page-form-select"
-                    >
-                      {getOrderStatusActions(editingOrder.order_status).map(status => (
-                        <option key={status} value={status}>
-                          {getOrderStatusIcon(status)} {status}
-                        </option>
-                      ))}
-                    </select>
+                    {isViewMode ? (
+                      <div className={`admin-page-order-badge ${getOrderStatusColor(editingOrder.order_status)}`}>
+                        {getOrderStatusIcon(editingOrder.order_status)}
+                        {editingOrder.order_status}
+                      </div>
+                    ) : (
+                      <select
+                        value={editingOrder.order_status}
+                        onChange={(e) => setEditingOrder({...editingOrder, order_status: e.target.value})}
+                        className="admin-page-form-select"
+                      >
+                        <option value="PROCESSING">PROCESSING</option>
+                        <option value="SHIPPED">SHIPPED</option>
+                        <option value="COMPLETED">COMPLETED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                      </select>
+                    )}
                   </div>
                 </div>
                 {/* Actions */}
                 <div className="admin-page-details-actions">
-                  <button
-                    onClick={handleSaveOrderChanges}
-                    className="admin-page-action-btn admin-page-action-btn-primary"
-                    disabled={statusUpdateLoading.has(editingOrder.id)}
-                  >
-                    {statusUpdateLoading.has(editingOrder.id) ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowDeleteConfirm(true);
-                      setOrderToDelete(editingOrder.id);
-                    }}
-                    className="admin-page-action-btn admin-page-action-btn-danger"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Order
-                  </button>
+                  {!isViewMode && (
+                    <button
+                      onClick={handleSaveOrderChanges}
+                      className="admin-page-action-btn admin-page-action-btn-primary"
+                      disabled={statusUpdateLoading.has(editingOrder.id)}
+                    >
+                      {statusUpdateLoading.has(editingOrder.id) ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  )}
+                  {!isViewMode && (
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(true);
+                        setOrderToDelete(editingOrder.id);
+                      }}
+                      className="admin-page-action-btn admin-page-action-btn-danger"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Order
+                    </button>
+                  )}
+                  {isViewMode && (
+                    <button
+                      onClick={() => setIsViewMode(false)}
+                      className="admin-page-action-btn admin-page-action-btn-primary"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      Switch to Edit Mode
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

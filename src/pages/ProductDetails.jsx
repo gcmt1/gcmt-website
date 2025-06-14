@@ -29,6 +29,7 @@ const ProductDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [user, setUser] = useState(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   
   // Edit/Delete review state
   const [editingReview, setEditingReview] = useState(null);
@@ -675,175 +676,248 @@ const ProductDetail = () => {
           </div>
         </section>
 
-        {/* Reviews Section */}
-        <section className="reviews-section">
-          <h2>Customer Reviews ({reviews.length})</h2>
-          
-          {/* Review Form */}
-          <div className="review-form">
-            <h3>Write a Review</h3>
-            
-            <div className="star-input">
-              <label>Rating:</label>
-              <div className="stars-container">
-                {renderStars(newRating, true)}
-              </div>
-            </div>
-            
-            <textarea
-              placeholder="Write your review here..."
-              value={newReviewText}
-              onChange={(e) => setNewReviewText(e.target.value)}
-              rows={4}
-              className="review-textarea"
-            />
-            
-            {submitError && <p className="error-text">{submitError}</p>}
-            
-            <button
-              onClick={handleReviewSubmit}
-              disabled={submitting}
-              className="btn-submit"
-            >
-              {submitting ? 'Submitting...' : 'Submit Review'}
-            </button>
-            
-            {!user && (
-              <p className="auth-notice">Please sign in to submit a review.</p>
-            )}
-          </div>
+{/* Reviews Section */}
+<section className="reviews-section">
+  <h2>Customer Reviews ({reviews.length})</h2>
+  
+  {/* Review Form */}
+  <div className="review-form">
+    <h3>Write a Review</h3>
+    
+    <div className="star-input">
+      <label>Rating:</label>
+      <div className="stars-container">
+        {renderStars(newRating, true)}
+      </div>
+    </div>
+    
+    <textarea
+      placeholder="Write your review here..."
+      value={newReviewText}
+      onChange={(e) => setNewReviewText(e.target.value)}
+      rows={4}
+      className="review-textarea"
+    />
+    
+    {submitError && <p className="error-text">{submitError}</p>}
+    
+    <button
+      onClick={handleReviewSubmit}
+      disabled={submitting}
+      className="btn-submit"
+    >
+      {submitting ? 'Submitting...' : 'Submit Review'}
+    </button>
+    
+    {!user && (
+      <p className="auth-notice">Please sign in to submit a review.</p>
+    )}
+  </div>
 
-          {/* Existing Reviews */}
-          <div className="reviews-list">
-            {reviews.length === 0 ? (
-              <p>No reviews yet. Be the first to review this product!</p>
+  {/* Latest Reviews Preview */}
+  <div className="reviews-list">
+    {reviews.length === 0 ? (
+      <p>No reviews yet. Be the first to review this product!</p>
+    ) : (
+      <>
+        {reviews.slice(0, 3).map((rev) => (
+          <div key={rev.id} className="review-card">
+            {editingReview === rev.id ? (
+              // Edit Mode
+              <div className="review-edit-form">
+                <div className="review-header">
+                  <strong>{rev.user_name}</strong>
+                  <span className="review-date">
+                    {new Date(rev.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                
+                <div className="star-input">
+                  <label>Rating:</label>
+                  <div className="stars-container">
+                    {renderStars(editRating, false, true)}
+                  </div>
+                </div>
+                
+                <textarea
+                  value={editReviewText}
+                  onChange={(e) => setEditReviewText(e.target.value)}
+                  rows={3}
+                  className="review-textarea"
+                  placeholder="Update your review..."
+                />
+                
+                <div className="review-edit-actions">
+                  <button
+                    onClick={() => handleUpdateReview(rev.id)}
+                    className="btn-save"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             ) : (
-              reviews.map((rev) => (
-                <div key={rev.id} className="review-card">
-                  {editingReview === rev.id ? (
-                    // Edit Mode
-                    <div className="review-edit-form">
-                      <div className="review-header">
-                        <strong>{rev.user_name}</strong>
-                        <span className="review-date">
-                          {new Date(rev.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      
-                      <div className="star-input">
-                        <label>Rating:</label>
-                        <div className="stars-container">
-                          {renderStars(editRating, false, true)}
-                        </div>
-                      </div>
-                      
-                      <textarea
-                        value={editReviewText}
-                        onChange={(e) => setEditReviewText(e.target.value)}
-                        rows={3}
-                        className="review-textarea"
-                        placeholder="Update your review..."
-                      />
-                      
-                      <div className="review-edit-actions">
-                        <button
-                          onClick={() => handleUpdateReview(rev.id)}
-                          className="btn-save"
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="btn-cancel"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+              // View Mode
+              <>
+                <div className="review-header">
+                  <strong>{rev.user_name}</strong>
+                  <span className="review-date">
+                    {new Date(rev.created_at).toLocaleDateString()}
+                  </span>
+                  
+                  {/* Show edit/delete buttons only for user's own reviews */}
+                  {user && rev.user_id === user.id && (
+                    <div className="review-actions">
+                      <button
+                        onClick={() => handleEditReview(rev)}
+                        className="btn-edit"
+                        title="Edit review"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReview(rev.id)}
+                        className="btn-delete"
+                        title="Delete review"
+                        disabled={deletingReview === rev.id}
+                      >
+                        {deletingReview === rev.id ? 'Deleting...' : 'Delete'}
+                      </button>
                     </div>
-                  ) : (
-                    // View Mode
-                    <>
-                      <div className="review-header">
-                        <strong>{rev.user_name}</strong>
-                        <span className="review-date">
-                          {new Date(rev.created_at).toLocaleDateString()}
-                        </span>
-                        
-                        {/* Show edit/delete buttons only for user's own reviews */}
-                        {user && rev.user_id === user.id && (
-                          <div className="review-actions">
-                            <button
-                              onClick={() => handleEditReview(rev)}
-                              className="btn-edit"
-                              title="Edit review"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReview(rev.id)}
-                              className="btn-delete"
-                              title="Delete review"
-                              disabled={deletingReview === rev.id}
-                            >
-                              {deletingReview === rev.id ? 'Deleting...' : 'Delete'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="review-rating">{renderStars(rev.rating)}</div>
-                      {rev.review_text && <p className="review-text">{rev.review_text}</p>}
-                    </>
                   )}
                 </div>
-              ))
+                
+                <div className="review-rating">{renderStars(rev.rating)}</div>
+                {rev.review_text && <p className="review-text">{rev.review_text}</p>}
+              </>
             )}
           </div>
-        </section>
-      </div>
+        ))}
+        
+        {/* Show "View All Reviews" button if there are more than 3 reviews */}
+        {reviews.length > 3 && (
+          <div className="view-all-reviews-container">
+            <button
+              onClick={() => setShowAllReviews(true)}
+              className="btn-view-all-reviews"
+            >
+              View All Reviews ({reviews.length})
+            </button>
+          </div>
+        )}
+      </>
+    )}
+  </div>
+</section>
 
-      {/* Certifications Modal */}
-      {showCertModal && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <h3>Product Certifications</h3>
-              <button 
-                className="modal-close" 
-                onClick={() => setShowCertModal(false)}
-                aria-label="Close modal"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="modal-content">
-              {product.certifications.length > 0 ? (
-                <div className="certifications-grid">
-                  {product.certifications.map((cert, index) => (
-                    <div key={index} className="certification-item">
-                      <img src={cert.image} alt={cert.name} />
-                      <h4>{cert.name}</h4>
-                      <p>{cert.description}</p>
+{/* All Reviews Modal */}
+{showAllReviews && (
+  <div className="modal-overlay">
+    <div className="modal-container all-reviews-modal">
+      <div className="modal-header">
+        <h3>All Customer Reviews ({reviews.length})</h3>
+        <button 
+          className="modal-close" 
+          onClick={() => setShowAllReviews(false)}
+          aria-label="Close reviews modal"
+        >
+          <X size={24} />
+        </button>
+      </div>
+      
+      <div className="modal-content">
+        <div className="all-reviews-list">
+          {reviews.map((rev) => (
+            <div key={rev.id} className="review-card">
+              {editingReview === rev.id ? (
+                // Edit Mode
+                <div className="review-edit-form">
+                  <div className="review-header">
+                    <strong>{rev.user_name}</strong>
+                    <span className="review-date">
+                      {new Date(rev.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  <div className="star-input">
+                    <label>Rating:</label>
+                    <div className="stars-container">
+                      {renderStars(editRating, false, true)}
                     </div>
-                  ))}
+                  </div>
+                  
+                  <textarea
+                    value={editReviewText}
+                    onChange={(e) => setEditReviewText(e.target.value)}
+                    rows={3}
+                    className="review-textarea"
+                    placeholder="Update your review..."
+                  />
+                  
+                  <div className="review-edit-actions">
+                    <button
+                      onClick={() => handleUpdateReview(rev.id)}
+                      className="btn-save"
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="btn-cancel"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <p>This product does not have any certifications yet.</p>
+                // View Mode
+                <>
+                  <div className="review-header">
+                    <strong>{rev.user_name}</strong>
+                    <span className="review-date">
+                      {new Date(rev.created_at).toLocaleDateString()}
+                    </span>
+                    
+                    {/* Show edit/delete buttons only for user's own reviews */}
+                    {user && rev.user_id === user.id && (
+                      <div className="review-actions">
+                        <button
+                          onClick={() => handleEditReview(rev)}
+                          className="btn-edit"
+                          title="Edit review"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReview(rev.id)}
+                          className="btn-delete"
+                          title="Delete review"
+                          disabled={deletingReview === rev.id}
+                        >
+                          {deletingReview === rev.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="review-rating">{renderStars(rev.rating)}</div>
+                  {rev.review_text && <p className="review-text">{rev.review_text}</p>}
+                </>
               )}
-              
-              <div className="certification-info">
-                <h4>Our Commitment to Quality</h4>
-                <p>
-                  We believe in transparency and quality at every step of our production process. 
-                  Our certifications reflect our dedication to providing you with products that 
-                  meet the highest standards of purity, potency, and sustainability.
-                </p>
-              </div>
             </div>
-          </div>
+          ))}
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+        )}
+      </div>
     </div>
   );
 };
