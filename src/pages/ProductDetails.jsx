@@ -241,7 +241,7 @@ const ProductDetail = () => {
   if (loading) {
     return (
       <div className="product-container">
-        <div className="loading-spinner">Loading product information...</div>
+        <div className="loading-spinner"></div>
       </div>
     );
   }
