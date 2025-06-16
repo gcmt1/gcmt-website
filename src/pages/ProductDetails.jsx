@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Star, ShoppingCart, Heart, Share2,
-  ArrowLeft, ArrowRight, Check, ChevronDown
+  ArrowLeft, ArrowRight, Check, ChevronDown,
+  X, Copy, MessageCircle, Facebook, Twitter, Mail, Link
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import '../styles/ProductDetails.css';
@@ -20,6 +21,8 @@ const ProductDetail = () => {
   const [selectedTab, setSelectedTab] = useState('description');
   const [selectedVariant, setSelectedVariant] = useState('');
   const [showCertModal, setShowCertModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -102,6 +105,100 @@ const ProductDetail = () => {
       fetchProduct();
     }
   }, [id]);
+
+  // Share functionality
+  const getProductUrl = () => {
+    return window.location.href;
+  };
+
+  const getShareText = () => {
+    const price = product.discount ? `₹${product.discountPrice}` : `₹${product.price}`;
+    const discount = product.discount ? ` (${product.discount} OFF!)` : '';
+    return `Check out ${product.name} - ${product.shortDescription} at ${price}${discount}`;
+  };
+
+  const shareOptions = [
+    {
+      name: 'WhatsApp',
+      icon: MessageCircle,
+      color: '#25D366',
+      action: () => {
+        const text = encodeURIComponent(getShareText());
+        const url = encodeURIComponent(getProductUrl());
+        window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+      }
+    },
+    {
+      name: 'Facebook',
+      icon: Facebook,
+      color: '#1877F2',
+      action: () => {
+        const url = encodeURIComponent(getProductUrl());
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+      }
+    },
+    {
+      name: 'Twitter',
+      icon: Twitter,
+      color: '#1DA1F2',
+      action: () => {
+        const text = encodeURIComponent(getShareText());
+        const url = encodeURIComponent(getProductUrl());
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+      }
+    },
+    {
+      name: 'Email',
+      icon: Mail,
+      color: '#EA4335',
+      action: () => {
+        const subject = encodeURIComponent(`Check out ${product.name}`);
+        const body = encodeURIComponent(`${getShareText()}\n\n${getProductUrl()}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`);
+      }
+    },
+    {
+      name: 'Copy Link',
+      icon: Link,
+      color: '#6B7280',
+      action: () => copyToClipboard()
+    }
+  ];
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(getProductUrl());
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = getProductUrl();
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
+  const handleShare = () => {
+    // Check if native sharing is available (mobile devices)
+    if (navigator.share && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      navigator.share({
+        title: product.name,
+        text: getShareText(),
+        url: getProductUrl(),
+      }).catch(() => {
+        // If native sharing fails, show modal
+        setShowShareModal(true);
+      });
+    } else {
+      // Desktop or unsupported devices - show modal
+      setShowShareModal(true);
+    }
+  };
 
   const renderStars = (rating) =>
     Array(5)
@@ -310,6 +407,7 @@ const ProductDetail = () => {
                 
                 <button 
                   className="btn-icon"
+                  onClick={handleShare}
                   aria-label="Share product"
                 >
                   <Share2 size={20} />
@@ -420,6 +518,67 @@ const ProductDetail = () => {
           <ReviewSystem productId={product.id} />
         </section>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
+          <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Share Product</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowShareModal(false)}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="product-preview">
+                <img src={product.images[0]} alt={product.name} className="preview-image" />
+                <div className="preview-info">
+                  <h4>{product.name}</h4>
+                  <p className="preview-price">
+                    {product.discount ? `₹${product.discountPrice}` : `₹${product.price}`}
+                    {product.discount && <span className="preview-discount">{product.discount} OFF</span>}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="share-options">
+                {shareOptions.map((option) => (
+                  <button
+                    key={option.name}
+                    className="share-option"
+                    onClick={option.action}
+                    style={{ '--option-color': option.color }}
+                  >
+                    <option.icon size={24} />
+                    <span>{option.name === 'Copy Link' && copySuccess ? 'Copied!' : option.name}</span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="share-url">
+                <input 
+                  type="text" 
+                  value={getProductUrl()} 
+                  readOnly 
+                  className="url-input"
+                />
+                <button 
+                  className="copy-btn"
+                  onClick={copyToClipboard}
+                >
+                  <Copy size={16} />
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

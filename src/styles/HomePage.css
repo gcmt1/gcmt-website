@@ -283,21 +283,22 @@ section {
 }
 
 .benefit-image {
-  background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+  background-image: url('../assets/GCMT-logo.png');
   border-radius: 20px;
   height: 400px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.benefit-image::before {
-  content: '🌿';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 4rem;
-  opacity: 0.3;
+.benefit-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
+  display: block;
 }
 
 .benefit-content h2 {

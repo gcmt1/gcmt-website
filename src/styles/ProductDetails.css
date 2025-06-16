@@ -816,3 +816,289 @@ html {
   background-color: var(--primary-color);
   color: white;
 }
+
+/* Share Modal Styles - Add these to your ProductDetails.css */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.share-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.product-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.preview-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.preview-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.preview-price {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-discount {
+  background: #dc2626;
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--option-color, #6b7280);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.share-option:hover {
+  border-color: var(--option-color, #6b7280);
+  background: color-mix(in srgb, var(--option-color, #6b7280) 5%, white);
+  transform: translateY(-2px);
+}
+
+.share-option:active {
+  transform: translateY(0);
+}
+
+.share-url {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.url-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: #f9fafb;
+  color: #6b7280;
+  outline: none;
+}
+
+.url-input:focus {
+  border-color: #3b82f6;
+  background: white;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: #2563eb;
+}
+
+.copy-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 16px;
+  }
+  
+  .share-modal {
+    max-height: 85vh;
+  }
+  
+  .modal-header,
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .share-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .product-preview {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .preview-image {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .share-url {
+    flex-direction: column;
+  }
+  
+  .url-input {
+    order: 2;
+  }
+  
+  .copy-btn {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .share-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .share-option {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
+
+/* Animation for the modal */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.share-modal {
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+/* Copy success animation */
+.copy-btn:has-text("Copied!") {
+  background: #059669;
+}
+
+/* WhatsApp specific styling */
+.share-option[style*="#25D366"] svg {
+  color: #25D366;
+}
+
+/* Facebook specific styling */
+.share-option[style*="#1877F2"] svg {
+  color: #1877F2;
+}
+
+/* Twitter specific styling */
+.share-option[style*="#1DA1F2"] svg {
+  color: #1DA1F2;
+}
+
+/* Email specific styling */
+.share-option[style*="#EA4335"] svg {
+  color: #EA4335;
+}
+
+/* Copy link specific styling */
+.share-option[style*="#6B7280"] svg {
+  color: #6b7280;
+}

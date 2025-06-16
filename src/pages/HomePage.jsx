@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import '../styles/HomePage.css';
 import productPhoto from '../assets/Product1.jpg';
+import logo from '../assets/GCMT-logo.png';
 import { ArrowRight, Instagram, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
@@ -80,7 +81,9 @@ const HomePage = () => {
 
       <section className="benefits">
         <div className="benefits-container">
-          <div className="benefit-image"></div>
+          <div className="benefit-image">
+            <img src={logo} alt="Herbal Benefits" className="benefit-img" />
+          </div>
           <div className="benefit-content">
             <h2>The GCMT Herbal Difference</h2>
             <ul className="benefits-list">
@@ -159,9 +162,9 @@ const HomePage = () => {
           </a>
         </div>
         <div className="instagram-grid">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(2)].map((_, i) => (
             <div key={i} className="instagram-post">
-              <img src={productPhoto} alt="Instagram post" />
+              <img src={logo} alt="Instagram post" />
               <div className="instagram-overlay">
                 <Instagram size={24} />
               </div>
