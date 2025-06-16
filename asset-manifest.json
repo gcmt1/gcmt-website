@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/static/css/main.cd54ce94.css",
-    "main.js": "/static/js/main.50ba8c49.js",
+    "main.css": "/static/css/main.a90d7052.css",
+    "main.js": "/static/js/main.0effdc6f.js",
     "static/js/952.26b32017.chunk.js": "/static/js/952.26b32017.chunk.js",
     "static/js/977.f26c5ab6.chunk.js": "/static/js/977.f26c5ab6.chunk.js",
     "static/js/732.f957402c.chunk.js": "/static/js/732.f957402c.chunk.js",
     "static/js/453.905f22d3.chunk.js": "/static/js/453.905f22d3.chunk.js",
     "static/media/GCMT-logo.png": "/static/media/GCMT-logo.e629a3fcb5c1e14689b1.png",
-    "static/media/model.png": "/static/media/model.d3fa26b8629281512562.png",
+    "static/media/Product1.jpg": "/static/media/Product1.7068e7f757cb97469521.jpg",
     "static/media/ARYA PATEL GCMT.jpg": "/static/media/ARYA PATEL GCMT.32739331b74e665ab7ae.jpg",
     "static/media/product.jpg": "/static/media/product.c5d6ad53d97464a296b6.jpg",
     "index.html": "/index.html",
-    "main.cd54ce94.css.map": "/static/css/main.cd54ce94.css.map",
-    "main.50ba8c49.js.map": "/static/js/main.50ba8c49.js.map",
+    "main.a90d7052.css.map": "/static/css/main.a90d7052.css.map",
+    "main.0effdc6f.js.map": "/static/js/main.0effdc6f.js.map",
     "952.26b32017.chunk.js.map": "/static/js/952.26b32017.chunk.js.map",
     "977.f26c5ab6.chunk.js.map": "/static/js/977.f26c5ab6.chunk.js.map",
     "732.f957402c.chunk.js.map": "/static/js/732.f957402c.chunk.js.map",
     "453.905f22d3.chunk.js.map": "/static/js/453.905f22d3.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.cd54ce94.css",
-    "static/js/main.50ba8c49.js"
+    "static/css/main.a90d7052.css",
+    "static/js/main.0effdc6f.js"
   ]
 }
