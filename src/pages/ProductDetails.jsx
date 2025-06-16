@@ -5,14 +5,13 @@ import {
   ArrowLeft, ArrowRight, Check, ChevronDown
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { X } from 'lucide-react';
 import '../styles/ProductDetails.css';
 import AddToCartButton from '../components/AddToCartButton';
+import ReviewSystem from '../components/ReviewSystem';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -21,41 +20,9 @@ const ProductDetail = () => {
   const [selectedTab, setSelectedTab] = useState('description');
   const [selectedVariant, setSelectedVariant] = useState('');
   const [showCertModal, setShowCertModal] = useState(false);
-  
-  // Review system state variables (these were missing)
-  const [hoverRating, setHoverRating] = useState(0);
-  const [newRating, setNewRating] = useState(0);
-  const [newReviewText, setNewReviewText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const [user, setUser] = useState(null);
-  const [showAllReviews, setShowAllReviews] = useState(false);
-  
-  // Edit/Delete review state
-  const [editingReview, setEditingReview] = useState(null);
-  const [editRating, setEditRating] = useState(0);
-  const [editReviewText, setEditReviewText] = useState('');
-  const [editHoverRating, setEditHoverRating] = useState(0);
-  const [deletingReview, setDeletingReview] = useState(null);
-
-  // Get current user
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getCurrentUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
-    async function fetchProductAndReviews() {
+    async function fetchProduct() {
       try {
         setLoading(true);
         setError(null);
@@ -102,7 +69,7 @@ const ProductDetail = () => {
           discountPrice,
           discount: prodData.product_discount ? `${prodData.product_discount}%` : null,
           rating: 4.5, // Default value
-          reviews: 0, // Will be updated with actual review count
+          reviews: 0, // Will be updated by ReviewSystem component
           stock: prodData.stock || 50, // Default stock if not provided
           sku: id,
           images: prodData.product_image ? [prodData.product_image] : ['/api/placeholder/500/500'],
@@ -123,25 +90,6 @@ const ProductDetail = () => {
         setProduct(productData);
         setSelectedVariant(variants[0] || '');
 
-        // Fetch reviews
-        const { data: revData, error: revErr } = await supabase
-          .from('product_reviews')
-          .select('id, user_name, rating, review_text, created_at, user_id')
-          .eq('product_id', id)
-          .order('created_at', { ascending: false });
-
-        if (revErr) {
-          console.warn('Error fetching reviews:', revErr);
-          // Don't throw error for reviews, just continue
-        } else {
-          setReviews(revData || []);
-          // Update product with actual review count
-          setProduct(prev => ({
-            ...prev,
-            reviews: revData?.length || 0
-          }));
-        }
-
       } catch (err) {
         console.error('Error fetching product:', err);
         setError('Unable to load product information.');
@@ -151,230 +99,21 @@ const ProductDetail = () => {
     }
 
     if (id) {
-      fetchProductAndReviews();
+      fetchProduct();
     }
   }, [id]);
 
-  const renderStars = (rating, isInteractive = false, isEdit = false) =>
+  const renderStars = (rating) =>
     Array(5)
       .fill(0)
-      .map((_, i) => {
-        const starIndex = i + 1;
-        let filled;
-        
-        if (isEdit) {
-          filled = starIndex <= (editHoverRating || editRating);
-        } else if (isInteractive) {
-          filled = starIndex <= (hoverRating || newRating);
-        } else {
-          filled = i < rating;
-        }
-        
-        return (
-          <Star
-            key={i}
-            size={20}
-            fill={filled ? '#FFB800' : 'none'}
-            stroke={filled ? '#FFB800' : '#8B8B8B'}
-            className={isInteractive || isEdit ? 'cursor-pointer' : ''}
-            onMouseEnter={
-              isEdit 
-                ? () => setEditHoverRating(starIndex)
-                : isInteractive 
-                  ? () => setHoverRating(starIndex) 
-                  : undefined
-            }
-            onMouseLeave={
-              isEdit 
-                ? () => setEditHoverRating(0)
-                : isInteractive 
-                  ? () => setHoverRating(0) 
-                  : undefined
-            }
-            onClick={
-              isEdit 
-                ? () => setEditRating(starIndex)
-                : isInteractive 
-                  ? () => setNewRating(starIndex) 
-                  : undefined
-            }
-          />
-        );
-      });
-
-  const handleReviewSubmit = async () => {
-    // Clear previous errors
-    setSubmitError('');
-    
-    if (!user) {
-      setSubmitError('Please sign in to submit a review.');
-      return;
-    }
-    
-    if (newRating < 1) {
-      setSubmitError('Please select a rating.');
-      return;
-    }
-    
-    if (!newReviewText.trim()) {
-      setSubmitError('Please write a review.');
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      const userName =
-        user.user_metadata?.full_name
-          ? user.user_metadata.full_name
-          : user.email
-        ? user.email.split('@')[0]
-        : 'Anonymous';
-
-      const { error: insertErr } = await supabase
-        .from('product_reviews')
-        .insert({
-          product_id: id,
-          user_id: user.id,
-          user_name: userName,
-          rating: newRating,
-          review_text: newReviewText.trim()
-        });
-        
-      if (insertErr) throw insertErr;
-      
-      // Refresh reviews after successful submission
-      const { data: revData } = await supabase
-        .from('product_reviews')
-        .select('id, user_name, rating, review_text, created_at, user_id')
-        .eq('product_id', id)
-        .order('created_at', { ascending: false });
-        
-      setReviews(revData || []);
-      
-      // Update product review count
-      setProduct(prev => ({
-        ...prev,
-        reviews: revData?.length || 0
-      }));
-      
-      // Reset form
-      setNewRating(0);
-      setNewReviewText('');
-      setHoverRating(0);
-      setSubmitError('');
-      
-      // Show success message (optional)
-      alert('Review submitted successfully!');
-      
-    } catch (err) {
-      console.error('Error submitting review:', err);
-      setSubmitError('Failed to submit review. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditReview = (review) => {
-    setEditingReview(review.id);
-    setEditRating(review.rating);
-    setEditReviewText(review.review_text);
-    setEditHoverRating(0);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingReview(null);
-    setEditRating(0);
-    setEditReviewText('');
-    setEditHoverRating(0);
-  };
-
-  const handleUpdateReview = async (reviewId) => {
-    if (editRating < 1) {
-      alert('Please select a rating.');
-      return;
-    }
-    
-    if (!editReviewText.trim()) {
-      alert('Please write a review.');
-      return;
-    }
-
-    try {
-      const { error: updateErr } = await supabase
-        .from('product_reviews')
-        .update({
-          rating: editRating,
-          review_text: editReviewText.trim(),
-        })
-        .eq('id', reviewId)
-        .eq('user_id', user.id); // Ensure user can only edit their own reviews
-
-      if (updateErr) throw updateErr;
-
-      // Refresh reviews
-      const { data: revData } = await supabase
-        .from('product_reviews')
-        .select('id, user_name, rating, review_text, created_at, user_id')
-        .eq('product_id', id)
-        .order('created_at', { ascending: false });
-        
-      setReviews(revData || []);
-      
-      // Reset edit state
-      setEditingReview(null);
-      setEditRating(0);
-      setEditReviewText('');
-      setEditHoverRating(0);
-      
-      alert('Review updated successfully!');
-      
-    } catch (err) {
-      console.error('Error updating review:', err);
-      alert('Failed to update review. Please try again.');
-    }
-  };
-
-  const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm('Are you sure you want to delete this review?')) {
-      return;
-    }
-
-    setDeletingReview(reviewId);
-
-    try {
-      const { error: deleteErr } = await supabase
-        .from('product_reviews')
-        .delete()
-        .eq('id', reviewId)
-        .eq('user_id', user.id); // Ensure user can only delete their own reviews
-
-      if (deleteErr) throw deleteErr;
-
-      // Refresh reviews
-      const { data: revData } = await supabase
-        .from('product_reviews')
-        .select('id, user_name, rating, review_text, created_at, user_id')
-        .eq('product_id', id)
-        .order('created_at', { ascending: false });
-        
-      setReviews(revData || []);
-      
-      // Update product review count
-      setProduct(prev => ({
-        ...prev,
-        reviews: revData?.length || 0
-      }));
-      
-      alert('Review deleted successfully!');
-      
-    } catch (err) {
-      console.error('Error deleting review:', err);
-      alert('Failed to delete review. Please try again.');
-    } finally {
-      setDeletingReview(null);
-    }
-  };
+      .map((_, i) => (
+        <Star
+          key={i}
+          size={20}
+          fill={i < rating ? '#FFB800' : 'none'}
+          stroke={i < rating ? '#FFB800' : '#8B8B8B'}
+        />
+      ));
 
   const decreaseQuantity = () => {
     if (quantity > 1) {
@@ -676,247 +415,10 @@ const ProductDetail = () => {
           </div>
         </section>
 
-{/* Reviews Section */}
-<section className="reviews-section">
-  <h2>Customer Reviews ({reviews.length})</h2>
-  
-  {/* Review Form */}
-  <div className="review-form">
-    <h3>Write a Review</h3>
-    
-    <div className="star-input">
-      <label>Rating:</label>
-      <div className="stars-container">
-        {renderStars(newRating, true)}
-      </div>
-    </div>
-    
-    <textarea
-      placeholder="Write your review here..."
-      value={newReviewText}
-      onChange={(e) => setNewReviewText(e.target.value)}
-      rows={4}
-      className="review-textarea"
-    />
-    
-    {submitError && <p className="error-text">{submitError}</p>}
-    
-    <button
-      onClick={handleReviewSubmit}
-      disabled={submitting}
-      className="btn-submit"
-    >
-      {submitting ? 'Submitting...' : 'Submit Review'}
-    </button>
-    
-    {!user && (
-      <p className="auth-notice">Please sign in to submit a review.</p>
-    )}
-  </div>
-
-  {/* Latest Reviews Preview */}
-  <div className="reviews-list">
-    {reviews.length === 0 ? (
-      <p>No reviews yet. Be the first to review this product!</p>
-    ) : (
-      <>
-        {reviews.slice(0, 3).map((rev) => (
-          <div key={rev.id} className="review-card">
-            {editingReview === rev.id ? (
-              // Edit Mode
-              <div className="review-edit-form">
-                <div className="review-header">
-                  <strong>{rev.user_name}</strong>
-                  <span className="review-date">
-                    {new Date(rev.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                
-                <div className="star-input">
-                  <label>Rating:</label>
-                  <div className="stars-container">
-                    {renderStars(editRating, false, true)}
-                  </div>
-                </div>
-                
-                <textarea
-                  value={editReviewText}
-                  onChange={(e) => setEditReviewText(e.target.value)}
-                  rows={3}
-                  className="review-textarea"
-                  placeholder="Update your review..."
-                />
-                
-                <div className="review-edit-actions">
-                  <button
-                    onClick={() => handleUpdateReview(rev.id)}
-                    className="btn-save"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="btn-cancel"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // View Mode
-              <>
-                <div className="review-header">
-                  <strong>{rev.user_name}</strong>
-                  <span className="review-date">
-                    {new Date(rev.created_at).toLocaleDateString()}
-                  </span>
-                  
-                  {/* Show edit/delete buttons only for user's own reviews */}
-                  {user && rev.user_id === user.id && (
-                    <div className="review-actions">
-                      <button
-                        onClick={() => handleEditReview(rev)}
-                        className="btn-edit"
-                        title="Edit review"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteReview(rev.id)}
-                        className="btn-delete"
-                        title="Delete review"
-                        disabled={deletingReview === rev.id}
-                      >
-                        {deletingReview === rev.id ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="review-rating">{renderStars(rev.rating)}</div>
-                {rev.review_text && <p className="review-text">{rev.review_text}</p>}
-              </>
-            )}
-          </div>
-        ))}
-        
-        {/* Show "View All Reviews" button if there are more than 3 reviews */}
-        {reviews.length > 3 && (
-          <div className="view-all-reviews-container">
-            <button
-              onClick={() => setShowAllReviews(true)}
-              className="btn-view-all-reviews"
-            >
-              View All Reviews ({reviews.length})
-            </button>
-          </div>
-        )}
-      </>
-    )}
-  </div>
-</section>
-
-{/* All Reviews Modal */}
-{showAllReviews && (
-  <div className="modal-overlay">
-    <div className="modal-container all-reviews-modal">
-      <div className="modal-header">
-        <h3>All Customer Reviews ({reviews.length})</h3>
-        <button 
-          className="modal-close" 
-          onClick={() => setShowAllReviews(false)}
-          aria-label="Close reviews modal"
-        >
-          <X size={24} />
-        </button>
-      </div>
-      
-      <div className="modal-content">
-        <div className="all-reviews-list">
-          {reviews.map((rev) => (
-            <div key={rev.id} className="review-card">
-              {editingReview === rev.id ? (
-                // Edit Mode
-                <div className="review-edit-form">
-                  <div className="review-header">
-                    <strong>{rev.user_name}</strong>
-                    <span className="review-date">
-                      {new Date(rev.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  <div className="star-input">
-                    <label>Rating:</label>
-                    <div className="stars-container">
-                      {renderStars(editRating, false, true)}
-                    </div>
-                  </div>
-                  
-                  <textarea
-                    value={editReviewText}
-                    onChange={(e) => setEditReviewText(e.target.value)}
-                    rows={3}
-                    className="review-textarea"
-                    placeholder="Update your review..."
-                  />
-                  
-                  <div className="review-edit-actions">
-                    <button
-                      onClick={() => handleUpdateReview(rev.id)}
-                      className="btn-save"
-                    >
-                      Save Changes
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="btn-cancel"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                // View Mode
-                <>
-                  <div className="review-header">
-                    <strong>{rev.user_name}</strong>
-                    <span className="review-date">
-                      {new Date(rev.created_at).toLocaleDateString()}
-                    </span>
-                    
-                    {/* Show edit/delete buttons only for user's own reviews */}
-                    {user && rev.user_id === user.id && (
-                      <div className="review-actions">
-                        <button
-                          onClick={() => handleEditReview(rev)}
-                          className="btn-edit"
-                          title="Edit review"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReview(rev.id)}
-                          className="btn-delete"
-                          title="Delete review"
-                          disabled={deletingReview === rev.id}
-                        >
-                          {deletingReview === rev.id ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="review-rating">{renderStars(rev.rating)}</div>
-                  {rev.review_text && <p className="review-text">{rev.review_text}</p>}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-        )}
+        {/* Reviews Section - Now using ReviewSystem component */}
+        <section className="product-reviews">
+          <ReviewSystem productId={product.id} />
+        </section>
       </div>
     </div>
   );

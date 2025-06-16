@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import '../styles/HomePage.css';
-import productPhoto from '../assets/model.png';
+import productPhoto from '../assets/Product1.jpg';
 import { ArrowRight, Instagram, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
@@ -36,7 +36,6 @@ const HomePage = () => {
 
   return (
     <div className="homepage">
-      {/* Announcement Bar */}
       <div className="announcement-bar">
         <p>Free shipping on your first order | 100% Secure Checkout </p>
       </div>
@@ -54,7 +53,11 @@ const HomePage = () => {
             </a>
           </div>
         </div>
-        <div className="hero-image"></div>
+        
+        <div className="hero-image">
+          <img src={productPhoto} alt="GCMT Herbal Product" className="hero-img" />
+          <div className="hero-image-content"></div>
+        </div>
       </section>
 
       <section className="featured-products">
@@ -75,7 +78,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
       <section className="benefits">
         <div className="benefits-container">
           <div className="benefit-image"></div>

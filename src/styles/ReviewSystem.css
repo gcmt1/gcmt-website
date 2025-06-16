@@ -1,0 +1,539 @@
+/* ReviewSystem.css - Professional E-commerce Review System */
+
+/* Main Section */
+.rs-section {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #1a1a1a;
+  line-height: 1.6;
+}
+
+/* Section Heading */
+.rs-heading {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+}
+
+/* Review Form */
+.rs-form {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.rs-form:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rs-form-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+/* Star Rating */
+.rs-stars {
+  display: flex;
+  gap: 0.15rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.rs-card .rs-stars {
+  margin-bottom: 0.5rem;
+}
+
+.rs-star {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.rs-card .rs-star {
+  width: 14px;
+  height: 14px;
+}
+
+.rs-star:hover {
+  transform: scale(1.1);
+}
+
+.rs-star.cursor-pointer:hover {
+  filter: drop-shadow(0 0 4px rgba(255, 184, 0, 0.4));
+}
+
+/* Textarea */
+.rs-textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.rs-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: #ffffff;
+}
+
+.rs-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Error Message */
+.rs-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rs-error::before {
+  content: "⚠";
+  font-size: 1rem;
+}
+
+/* Submit Button */
+.rs-submit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  margin-top: 1rem;
+}
+
+.rs-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.rs-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Review List */
+.rs-list {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb #f9fafb;
+}
+
+/* Custom Scrollbar for horizontal list */
+.rs-list::-webkit-scrollbar {
+    height: 8px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+.rs-list::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 8px;
+}
+
+/* Review Cards */
+.rs-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    width: 280px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.rs-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+}
+
+.rs-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+}
+
+.rs-card-header strong {
+    font-size: 0.9rem;
+    color: #1f2937;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.rs-card-date {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0.2rem 0 0 0;
+}
+
+.rs-card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Action Buttons */
+.rs-edit-btn, .rs-delete-btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rs-edit-btn {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #475569;
+}
+
+.rs-edit-btn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.rs-delete-btn {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.rs-delete-btn:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.rs-update-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+}
+
+.rs-update-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+}
+
+/* Review Text */
+.rs-text {
+    color: #374151;
+    margin: 0.75rem 0 0 0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* View All Button */
+.rs-view-all {
+    width: 100%;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.rs-view-all:hover {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal - Grid Layout for Cards */
+.rs-modal .rs-card {
+    margin: 0;
+    width: 260px;
+    min-height: 180px;
+}
+
+.rs-modal-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    padding: 0 1.5rem 1.5rem 1.5rem;
+}
+.rs-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+
+.rs-modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: slideIn 0.3s ease;
+}
+
+.rs-close-btn {
+    position: sticky;
+    top: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: none;
+    width: 100%;
+    padding: 1rem;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+}
+
+.rs-close-btn:hover {
+    background: rgba(249, 250, 251, 0.95);
+    color: #374151;
+}
+
+.rs-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 1.5rem 1.5rem 1.5rem;
+    padding-top: 0.5rem;
+}
+
+.rs-modal .rs-card {
+    margin: 0 1.5rem 1rem 1.5rem;
+}
+
+.rs-modal .rs-card:last-child {
+    margin-bottom: 1.5rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rs-section {
+        padding: 1rem 0.75rem;
+    }
+    
+    .rs-form {
+        padding: 1.5rem;
+    }
+    
+    .rs-list {
+        gap: 0.75rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .rs-card {
+        padding: 0.875rem;
+        width: 250px;
+        min-height: 180px;
+    }
+    
+    .rs-card-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .rs-card-actions {
+        align-self: stretch;
+    }
+    
+    .rs-edit-btn, .rs-delete-btn {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .rs-heading {
+        font-size: 1.5rem;
+    }
+    
+    .rs-modal {
+        margin: 0.5rem;
+        max-height: 90vh;
+    }
+    
+    .rs-modal-content {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    .rs-stars {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .rs-section {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .rs-form {
+        padding: 1rem;
+    }
+    
+    .rs-list {
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .rs-card {
+        padding: 0.75rem;
+        width: 220px;
+        min-height: 160px;
+    }
+    
+    .rs-modal-title {
+        font-size: 1.25rem;
+        margin: 0 1rem 1rem 1rem;
+    }
+    
+    .rs-modal-content {
+        grid-template-columns: 1fr;
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    .rs-modal .rs-card {
+        width: 100%;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus states for keyboard navigation */
+.rs-submit-btn:focus,
+.rs-edit-btn:focus,
+.rs-delete-btn:focus,
+.rs-update-btn:focus,
+.rs-view-all:focus,
+.rs-close-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.rs-star:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Loading state */
+.rs-submit-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: none;
+}
+
+/* Empty state */
+.rs-list p {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  padding: 2rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+  width: 100%;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Scroll Hint for Horizontal Reviews */
+.rs-list::after {
+  content: '';
+  width: 20px;
+  flex-shrink: 0;
+}

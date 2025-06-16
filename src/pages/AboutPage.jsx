@@ -15,8 +15,7 @@ export default function AboutPage() {
               About Our Company
             </h1>
             <p className="aboutus-subtitle text-xl text-gray-600 max-w-3xl mb-10">
-              We're dedicated to providing exceptional products with unmatched service. 
-              Our journey is built on quality, innovation, and customer satisfaction.
+Gold Coin Multi-Trade Private Limited is a trusted name in natural wellness, offering a specialized range of herbal and ayurvedic dental care products. Proudly rooted in India’s ancient healing traditions, we are dedicated to delivering safe, effective, and nature-powered solutions for oral hygiene and well-being.
             </p>
             <div className="aboutus-divider w-24 h-1 bg-blue-600 rounded" />
           </div>
@@ -39,14 +38,13 @@ export default function AboutPage() {
                 Our Story
               </h2>
               <p className="aboutus-story-paragraph text-gray-600 mb-6">
-                Founded in 2010, our company began with a simple mission: to create high-quality products that enhance people's lives...
-              </p>
+Since 2012, we have earned the trust of thousands of customers across India by upholding the highest standards of purity, quality, and customer satisfaction. Our products are thoughtfully formulated using time-tested Ayurvedic ingredients, carefully blended to provide visible results—naturally and gently.              </p>
               <p className="aboutus-story-paragraph text-gray-600 mb-6">
-                Through dedication to craftsmanship and attention to detail...
-              </p>
+From day one, our mission has been simple yet powerful: to combine authentic Ayurvedic wisdom with modern convenience, helping people lead healthier lives through trusted, plant-based alternatives.              </p>
               <p className="aboutus-story-paragraph text-gray-600">
-                Today, we remain committed to the values that guided us...
-              </p>
+With over a decade of presence in the market, Gold Coin Multi-Trade Private Limited continues to grow as a preferred choice for those seeking honest, effective, and holistic dental care.
+
+Experience the power of Ayurveda. Trusted since 2012.              </p>
             </div>
           </div>
         </div>
@@ -120,10 +118,10 @@ export default function AboutPage() {
         <div className="aboutus-container container mx-auto px-4 md:px-6">
           <div className="aboutus-stats-grid grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              ['15+', 'Years in Business'],
+              ['10+', 'Years in Business'],
               ['50K+', 'Happy Customers'],
-              ['100+', 'Products'],
-              ['20+', 'Countries Served'],
+              ['14+', 'Products Offered'],
+              ['100%', 'Made in India'],
             ].map(([stat, label]) => (
               <div key={label} className="aboutus-stat text-center">
                 <p className="aboutus-stat-number text-4xl font-bold mb-2">{stat}</p>
@@ -148,8 +146,8 @@ export default function AboutPage() {
           <div className="aboutus-contact-grid grid md:grid-cols-3 gap-8">
             {[
               { Icon: Mail, title: 'Email Us', lines: ['gcmtshop@gmail.com'] },
-              { Icon: Phone, title: 'Call Us', lines: ['+91 6355043113', 'Mon–Fri: 9AM–5PM IST'] },
-              { Icon: MapPin, title: 'Visit Us', lines: ['712, Pratik Mall, Kudasan, Gandhinagar, Gujarat, India'] },
+              { Icon: Phone, title: 'Call Us', lines: ['+91 7623818818', 'Mon–Fri: 10AM–6PM IST'] },
+              { Icon: MapPin, title: 'Visit Us', lines: ['213, Pratik Mall, Kudasan, Gandhinagar, Gujarat, India'] },
             ].map(({ Icon, title, lines }) => (
               <div key={title} className="aboutus-contact-card bg-gray-50 p-8 rounded-lg text-center">
                 <div className="aboutus-contact-icon text-blue-600 mx-auto mb-4"><Icon size={36} /></div>
@@ -178,18 +176,18 @@ export default function AboutPage() {
             {[
               {
                 quote: "The quality of their products is outstanding...",
-                name: "Emma Wilson",
-                role: "Loyal Customer",
+                name: "Suresh Chauhan",
+                role: "Customer",
               },
               {
                 quote: "Their customer service is exceptional...",
-                name: "James Peterson",
-                role: "Business Owner",
+                name: "Pooja Mehta",
+                role: "Customer",
               },
               {
                 quote: "I appreciate their commitment to quality...",
-                name: "Sophia Garcia",
-                role: "Retail Partner",
+                name: "Ramesh Patel",
+                role: "Customer",
               },
             ].map(({ quote, name, role }) => (
               <div key={name} className="aboutus-testimonial bg-white p-8 rounded-lg shadow-md">

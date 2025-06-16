@@ -75,7 +75,7 @@ const ContactPage = () => {
               <Phone className="contact-icon" size={20} />
               <div>
                 <h3>Call Us</h3>
-                <p>+91 6355043113</p>
+                <p>+91 7623818818</p>
               </div>
             </div>
             
@@ -83,7 +83,7 @@ const ContactPage = () => {
               <MapPin className="contact-icon" size={20} />
               <div>
                 <h3>Visit Us</h3>
-                <p>Pratik Mall<br />Kudasan, Gandhinagar, Gujarat</p>
+                <p>213, Pratik Mall<br />Kudasan, Gandhinagar, Gujarat</p>
               </div>
             </div>
             
