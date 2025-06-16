@@ -10,6 +10,14 @@ export default function Checkout() {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
+    // Responsiveness
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // State Management
   const [cartItems, setCartItems] = useState([]);
   const [loadingCart, setLoadingCart] = useState(true);
@@ -525,10 +533,6 @@ export default function Checkout() {
   };
 
   const handleCashOnDeliveryClick = () => {
-    if (!contactSaved) {
-      showToast('Please submit the contact form before you can make a payment.', 'error');
-      return;
-    }
     handleCashOnDelivery();
   };
 
@@ -570,10 +574,21 @@ export default function Checkout() {
     <div className="checkout-container">
       <div className="checkout-wrapper">
         <h1 className="checkout-title">Checkout</h1>
-        
-        {renderShippingForm()}
-        {renderOrderSummary()}
-        {renderPaymentActions()}
+
+        {isMobile ? (
+          <>
+            {renderOrderSummary()}
+            {renderShippingForm()}
+            {renderPaymentActions()}
+          </>
+        ) : (
+          <>
+            {renderShippingForm()}
+            {renderOrderSummary()}
+            {renderPaymentActions()}
+          </>
+        )}
+
       </div>
     </div>
   );

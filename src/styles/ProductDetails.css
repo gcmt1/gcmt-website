@@ -63,27 +63,51 @@
   gap: 20px;
 }
 
+/* Loading Spinner - Modern Dual Ring */
 .loading-spinner {
-  font-size: var(--font-size-lg);
-  color: var(--text-secondary);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 18px;
+  min-height: 120px;
+  justify-content: center;
+  animation: fadeIn 0.5s;
 }
 
-.loading-spinner::before {
-  content: '';
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--border-color);
-  border-top: 2px solid var(--primary-color);
+.loading-spinner .spinner-dual-ring {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+}
+.loading-spinner .spinner-dual-ring:after {
+  content: " ";
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  border: 5px solid #e0e7ef;
+  border-top: 5px solid var(--primary-color, #007b55);
+  border-right: 5px solid var(--primary-color, #007b55);
+  animation: spinner-dual-ring 0.9s linear infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes spinner-dual-ring {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.loading-spinner-label {
+  font-size: 1.15rem;
+  color: var(--gray-700, #444);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  opacity: 0.85;
 }
 
 .error-message {
