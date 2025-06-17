@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import '../styles/HomePage.css';
 import productPhoto from '../assets/Product1.jpg';
 import logo from '../assets/GCMT-logo.png';
+import marketingvideo from '../assets/marketing-video.mp4';
 import { ArrowRight, Instagram, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
@@ -56,7 +57,15 @@ const HomePage = () => {
         </div>
         
         <div className="hero-image">
-          <img src={productPhoto} alt="GCMT Herbal Product" className="hero-img" />
+          <video
+            src={marketingvideo}
+            alt="GCMT Herbal Product"
+            className="hero-img"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
           <div className="hero-image-content"></div>
         </div>
       </section>

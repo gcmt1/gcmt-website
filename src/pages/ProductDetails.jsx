@@ -64,6 +64,30 @@ const ProductDetail = () => {
           ? +(prodData.product_price * (1 - prodData.product_discount / 100)).toFixed(2)
           : prodData.product_price;
 
+        // Process multiple images from comma-separated string
+        let images = [];
+        
+        if (prodData.product_image) {
+          // Check if it's a comma-separated string
+          if (prodData.product_image.includes(',')) {
+            // Split by comma and clean up each URL
+            images = prodData.product_image
+              .split(',')
+              .map(img => img.trim())
+              .filter(img => img && img.length > 0); // Remove empty strings
+          } else {
+            // Single image
+            images = [prodData.product_image.trim()];
+          }
+        }
+
+        // Fallback to placeholder if no images
+        if (images.length === 0) {
+          images = ['/api/placeholder/500/500'];
+        }
+
+        console.log('Processed images:', images); // Debug log to verify images are processed correctly
+
         const productData = {
           id: prodData.id,
           name: prodData.product_name,
@@ -75,7 +99,7 @@ const ProductDetail = () => {
           reviews: 0, // Will be updated by ReviewSystem component
           stock: prodData.stock || 50, // Default stock if not provided
           sku: id,
-          images: prodData.product_image ? [prodData.product_image] : ['/api/placeholder/500/500'],
+          images, // Now properly handles multiple images
           variants,
           benefits,
           descriptionContent: prodData.product_description,
@@ -238,6 +262,18 @@ const ProductDetail = () => {
     }
   };
 
+  // Handle thumbnail click with error handling
+  const handleThumbnailClick = (index) => {
+    if (index >= 0 && index < product.images.length) {
+      setActiveImage(index);
+    }
+  };
+
+  // Handle image load error
+  const handleImageError = (e) => {
+    e.target.src = '/api/placeholder/500/500';
+  };
+
   if (loading) {
     return (
       <div className="product-container">
@@ -284,6 +320,7 @@ const ProductDetail = () => {
                 onClick={() => handleImageNavigation('prev')}
                 aria-label="Previous image"
                 disabled={product.images.length <= 1}
+                style={{ opacity: product.images.length <= 1 ? 0.5 : 1 }}
               >
                 <ArrowLeft size={20} />
               </button>
@@ -291,11 +328,18 @@ const ProductDetail = () => {
               <div className="main-image-container">
                 <img 
                   src={product.images[activeImage]} 
-                  alt={product.name} 
-                  className="main-image" 
+                  alt={`${product.name} - Image ${activeImage + 1}`} 
+                  className="main-image"
+                  onError={handleImageError}
                 />
                 {product.discount && (
                   <span className="discount-badge">{product.discount}</span>
+                )}
+                {/* Image counter for multiple images */}
+                {product.images.length > 1 && (
+                  <div className="image-counter">
+                    {activeImage + 1} / {product.images.length}
+                  </div>
                 )}
               </div>
               
@@ -304,20 +348,27 @@ const ProductDetail = () => {
                 onClick={() => handleImageNavigation('next')}
                 aria-label="Next image"
                 disabled={product.images.length <= 1}
+                style={{ opacity: product.images.length <= 1 ? 0.5 : 1 }}
               >
                 <ArrowRight size={20} />
               </button>
             </div>
             
+            {/* Thumbnail gallery - only show if multiple images */}
             {product.images.length > 1 && (
               <div className="image-thumbnails">
                 {product.images.map((img, index) => (
                   <button
                     key={index}
                     className={`thumbnail ${activeImage === index ? 'active' : ''}`}
-                    onClick={() => setActiveImage(index)}
+                    onClick={() => handleThumbnailClick(index)}
+                    aria-label={`View image ${index + 1}`}
                   >
-                    <img src={img} alt={`${product.name} thumbnail ${index + 1}`} />
+                    <img 
+                      src={img} 
+                      alt={`${product.name} thumbnail ${index + 1}`}
+                      onError={handleImageError}
+                    />
                   </button>
                 ))}
               </div>
@@ -536,7 +587,12 @@ const ProductDetail = () => {
             
             <div className="modal-body">
               <div className="product-preview">
-                <img src={product.images[0]} alt={product.name} className="preview-image" />
+                <img 
+                  src={product.images[0]} 
+                  alt={product.name} 
+                  className="preview-image"
+                  onError={handleImageError}
+                />
                 <div className="preview-info">
                   <h4>{product.name}</h4>
                   <p className="preview-price">
