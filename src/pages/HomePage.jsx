@@ -13,9 +13,9 @@ const HomePage = () => {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   const testimonials = [
-    { quote: "Amazing product!", author: "John Doe", location: "New York" },
-    { quote: "Highly recommend!", author: "Jane Smith", location: "California" },
-    { quote: "Will buy again!", author: "Alice Brown", location: "Texas" },
+    { quote: "The quality of their products is outstanding, will buy again!", author: "Suresh Chauhan", location: "Surat" },
+    { quote: "Their customer service is exceptional.", author: "Pooja Mehta", location: "Mumbai" },
+    { quote: "I appreciate their commitment to quality.", author: "Ramesh Patel", location: "Gandhinagar" },
   ];
 
   useEffect(() => {

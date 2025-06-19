@@ -377,14 +377,15 @@ export default function GoldOrdersPage() {
     return grouped;
   };
 
-  const calculateTotalRevenue = (orders) => {
-    return orders.reduce((total, order) => {
-      if (order.payment_status === 'SUCCESS') {
-        return total + order.product_list.reduce((sum, item) => sum + item.total_price, 0);
-      }
-      return total;
-    }, 0);
-  };
+const calculateTotalRevenue = (orders) => {
+  return orders.reduce((total, order) => {
+    // Calculate revenue for all orders, not just successful payments
+    if (order.product_list && Array.isArray(order.product_list)) {
+      return total + order.product_list.reduce((sum, item) => sum + (item.total_price || 0), 0);
+    }
+    return total;
+  }, 0);
+};
 
   const getStatusCounts = (orders) => {
     return orders.reduce((counts, order) => {

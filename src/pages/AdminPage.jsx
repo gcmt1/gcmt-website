@@ -56,6 +56,16 @@ export default function AdminLanding() {
           <UserPlus className="mx-auto text-blue-600 mb-4" size={32} />
           <h2 className="text-lg font-semibold text-gray-700">Newsletter Subscribers</h2>
           <p className="text-sm text-gray-500 mt-2">View all email subscriptions</p>
+
+        </div>
+
+                <div
+          onClick={() => navigate('/admin-product-manager')}
+          className="admin-card bg-white rounded-xl shadow-md hover:shadow-lg transition cursor-pointer p-6 text-center"
+        >
+          <UserPlus className="mx-auto text-blue-600 mb-4" size={32} />
+          <h2 className="text-lg font-semibold text-gray-700">Admin Product Management</h2>
+          <p className="text-sm text-gray-500 mt-2">View & Manage Products</p>
         </div>
 
         <div

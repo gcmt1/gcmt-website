@@ -27,6 +27,7 @@ import AdminLanding from "./pages/AdminPage";
 import AdminSubscription from "./pages/AdminSubscription";
 import AdminContactForm from "./pages/AdminContactForm";
 import YourOrders from "./pages/YourOrders"; // ✅ Fix: Capital Y
+import AdminProductManager  from "./pages/AdminProductManager"; // ✅ Fix: Import AdminProductManager
 import "./App.css";
 
 // ✅ Initialize Supabase
@@ -69,6 +70,8 @@ function App() {
                   <Route path="/admin-subscription" element={<AdminSubscription />} />
                   <Route path="/admin-contactform" element={<AdminContactForm />} />
                   <Route path="/your-orders" element={<YourOrders />} /> {/* ✅ Fix case */}
+                  <Route path="/admin-product-manager" element={<AdminProductManager/>} /> {/* ✅ Fix: Use correct component name */}    
+                  {/* Catch-all route for undefined paths */}
                   <Route path="*" element={<HomePage />} />
                 </Routes>
               </main>

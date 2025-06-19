@@ -96,7 +96,7 @@ const ProductDetail = () => {
           discountPrice,
           discount: prodData.product_discount ? `${prodData.product_discount}%` : null,
           rating: 4.5, // Default value
-          reviews: 0, // Will be updated by ReviewSystem component
+          reviews: "1+", // Will be updated by ReviewSystem component
           stock: prodData.stock || 50, // Default stock if not provided
           sku: id,
           images, // Now properly handles multiple images
@@ -382,7 +382,6 @@ const ProductDetail = () => {
             <div className="product-meta">
               <div className="product-rating">
                 {renderStars(product.rating)}
-                <span className="rating-count">({product.reviews} reviews)</span>
               </div>
             </div>
             
