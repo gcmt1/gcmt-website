@@ -1,17 +1,17 @@
-// encrypt-test.js
-const crypto = require("crypto");
+const crypto = require('crypto');
 
-const workingKey = "1FF45E68BC61BF20EFF579F26AF80992"; // ⚠️ replace this
-const plainText = "order_id=2e27d57b-0177-473e-9fcc-8f2fe6315f25&order_status=success&merchant_param1=c844c7fa-e593-4033-b68e-0eaec2570f0a";
+const workingKey = '1FF45E68BC61BF20EFF579F26AF80992'; // Replace with actual working key
+const plainText = 'order_id=630dfd2e-9106-482b-b706-0125d272abc5&order_status=Success&amount=150.00';
 
-// Generate MD5 key buffer (16 bytes)
-const mKey = crypto.createHash("md5").update(workingKey).digest();
-const iv = Buffer.alloc(16, 0); // 16 zero bytes
+function encryptCCAvenue(data, workingKey) {
+  const key = crypto.createHash('md5').update(workingKey).digest();
+  const iv = Buffer.from('000102030405060708090a0b0c0d0e0f', 'hex');
 
-const cipher = crypto.createCipheriv("aes-128-cbc", mKey, iv);
-cipher.setAutoPadding(true);
+  const cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
+  let encrypted = cipher.update(data, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+}
 
-let encrypted = cipher.update(plainText, "utf8", "base64");
-encrypted += cipher.final("base64");
-
-console.log("🔐 encResp to test:", encrypted);
+const encResp = encryptCCAvenue(plainText, workingKey);
+console.log('✅ EncResp for testing:\n', encResp);

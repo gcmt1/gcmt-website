@@ -6,7 +6,7 @@ import {
   Search, Filter, Calendar, Trash2, Eye, Package, CheckCircle, Clock, 
   AlertCircle, Download, RefreshCw, X, Save, ArrowLeft, ChevronDown,
   Edit3, Truck, PackageCheck, XCircle, MoreHorizontal, User, MapPin,
-  Phone, Mail, CreditCard, Hash
+  Phone, Mail, CreditCard, Hash, CalendarRange
 } from 'lucide-react';
 
 export default function GoldOrdersPage() {
@@ -17,6 +17,11 @@ export default function GoldOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState('ALL');
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
@@ -24,6 +29,7 @@ export default function GoldOrdersPage() {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(new Set());
+  const [paymentUpdateLoading, setPaymentUpdateLoading] = useState(new Set());
   const [expandedOrders, setExpandedOrders] = useState(new Set());
   const [notification, setNotification] = useState(null);
   const [isViewMode, setIsViewMode] = useState(false);
@@ -39,7 +45,7 @@ export default function GoldOrdersPage() {
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchTerm, statusFilter, paymentFilter, dateRange]);
+  }, [orders, searchTerm, statusFilter, paymentFilter, dateRange, customDateRange]);
 
   // Auto-hide notifications
   useEffect(() => {
@@ -140,10 +146,47 @@ export default function GoldOrdersPage() {
           filterDate.setMonth(now.getMonth() - 1);
           filtered = filtered.filter(order => new Date(order.created_at) >= filterDate);
           break;
+        case 'CUSTOM':
+          if (customDateRange.startDate && customDateRange.endDate) {
+            const startDate = new Date(customDateRange.startDate);
+            const endDate = new Date(customDateRange.endDate);
+            endDate.setHours(23, 59, 59, 999); // Include the entire end date
+            
+            filtered = filtered.filter(order => {
+              const orderDate = new Date(order.created_at);
+              return orderDate >= startDate && orderDate <= endDate;
+            });
+          }
+          break;
       }
     }
 
     setFilteredOrders(filtered);
+  };
+
+  const handleDateRangeChange = (value) => {
+    setDateRange(value);
+    if (value === 'CUSTOM') {
+      setShowCustomDatePicker(true);
+    } else {
+      setShowCustomDatePicker(false);
+      setCustomDateRange({ startDate: '', endDate: '' });
+    }
+  };
+
+  const applyCustomDateRange = () => {
+    if (customDateRange.startDate && customDateRange.endDate) {
+      setShowCustomDatePicker(false);
+      // The filtering will be triggered by the useEffect
+    } else {
+      showNotification('Please select both start and end dates', 'error');
+    }
+  };
+
+  const clearCustomDateRange = () => {
+    setCustomDateRange({ startDate: '', endDate: '' });
+    setDateRange('ALL');
+    setShowCustomDatePicker(false);
   };
 
   const toggleOrderExpansion = (orderId) => {
@@ -178,6 +221,7 @@ export default function GoldOrdersPage() {
       .from('orders')
       .update({
         order_status: editingOrder.order_status,
+        payment_status: editingOrder.payment_status,
         user_name: editingOrder.user_name,
         user_email: editingOrder.user_email,
         user_phone: editingOrder.user_phone,
@@ -321,6 +365,51 @@ export default function GoldOrdersPage() {
     }
   };
 
+  const updatePaymentStatus = async (orderId, newStatus) => {
+    setPaymentUpdateLoading(prev => new Set([...prev, orderId]));
+    
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: newStatus })
+        .eq('id', orderId);
+
+      if (error) {
+        console.error('Error updating payment status:', error);
+        showNotification('Failed to update payment status', 'error');
+        return;
+      }
+
+      // Update all related states consistently
+      const updateOrderInState = (order) => 
+        order.id === orderId ? { ...order, payment_status: newStatus } : order;
+
+      // Update orders array
+      setOrders(prevOrders => prevOrders.map(updateOrderInState));
+
+      // Update editingOrder if it's the same order being edited
+      if (editingOrder && editingOrder.id === orderId) {
+        setEditingOrder(prev => ({ ...prev, payment_status: newStatus }));
+      }
+
+      // Update selectedOrder if it's the same order
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(prev => ({ ...prev, payment_status: newStatus }));
+      }
+
+      showNotification(`Payment status updated to ${newStatus.toLowerCase()}`);
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      showNotification('Failed to update payment status', 'error');
+    } finally {
+      setPaymentUpdateLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'SUCCESS': return <CheckCircle className="admin-status-icon" />;
@@ -361,6 +450,11 @@ export default function GoldOrdersPage() {
 
   const getOrderStatusActions = (currentStatus) => {
     const allStatuses = ['PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED'];
+    return allStatuses.filter(status => status !== currentStatus);
+  };
+
+  const getPaymentStatusActions = (currentStatus) => {
+    const allStatuses = ['SUCCESS', 'PENDING', 'FAILED'];
     return allStatuses.filter(status => status !== currentStatus);
   };
 
@@ -558,15 +652,79 @@ const calculateTotalRevenue = (orders) => {
             {/* Date Range */}
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
+              onChange={(e) => handleDateRangeChange(e.target.value)}
               className="admin-page-filter-select"
             >
               <option value="ALL">All Time</option>
               <option value="TODAY">Today</option>
               <option value="WEEK">Last Week</option>
               <option value="MONTH">Last Month</option>
+              <option value="CUSTOM">Custom Range</option>
             </select>
           </div>
+
+          {/* Custom Date Range Picker */}
+          {showCustomDatePicker && (
+            <div className="admin-page-custom-date-range">
+              <div className="admin-page-custom-date-inputs">
+                <div className="admin-page-date-input-group">
+                  <label className="admin-page-date-label">
+                    <CalendarRange className="w-4 h-4" />
+                    From:
+                  </label>
+                  <input
+                    type="date"
+                    value={customDateRange.startDate}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="admin-page-date-input"
+                  />
+                </div>
+                <div className="admin-page-date-input-group">
+                  <label className="admin-page-date-label">
+                    <CalendarRange className="w-4 h-4" />
+                    To:
+                  </label>
+                  <input
+                    type="date"
+                    value={customDateRange.endDate}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="admin-page-date-input"
+                  />
+                </div>
+              </div>
+              <div className="admin-page-date-actions">
+                <button
+                  onClick={applyCustomDateRange}
+                  className="admin-page-date-apply-btn"
+                >
+                  Apply Filter
+                </button>
+                <button
+                  onClick={clearCustomDateRange}
+                  className="admin-page-date-clear-btn"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Active Custom Date Range Display */}
+          {dateRange === 'CUSTOM' && customDateRange.startDate && customDateRange.endDate && (
+            <div className="admin-page-active-date-range">
+              <CalendarRange className="w-4 h-4" />
+              <span>
+                Showing orders from {new Date(customDateRange.startDate).toLocaleDateString()} 
+                to {new Date(customDateRange.endDate).toLocaleDateString()}
+              </span>
+              <button
+                onClick={clearCustomDateRange}
+                className="admin-page-clear-date-btn"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -611,10 +769,25 @@ const calculateTotalRevenue = (orders) => {
                       </div>
                       
                       <div className="admin-page-order-header-right">
-                        <span className={`admin-page-payment-badge ${getPaymentStatusColor(order.payment_status)}`}>
-                          {getStatusIcon(order.payment_status)}
-                          <span className="admin-page-badge-text">{order.payment_status}</span>
-                        </span>
+                        <div className="admin-page-status-dropdown">
+                          <span className={`admin-page-payment-badge ${getPaymentStatusColor(order.payment_status)}`}>
+                            {getStatusIcon(order.payment_status)}
+                            <span className="admin-page-badge-text">{order.payment_status}</span>
+                          </span>
+                          <div className="admin-page-status-dropdown-content">
+                            {getPaymentStatusActions(order.payment_status).map(status => (
+                              <button
+                                key={status}
+                                onClick={() => updatePaymentStatus(order.id, status)}
+                                disabled={paymentUpdateLoading.has(order.id)}
+                                className="admin-page-status-dropdown-item"
+                              >
+                                {getStatusIcon(status)}
+                                {paymentUpdateLoading.has(order.id) ? 'Updating...' : status}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         
                         <div className="admin-page-status-dropdown">
                           <span className={`admin-page-order-badge ${getOrderStatusColor(order.order_status)}`}>
@@ -635,122 +808,72 @@ const calculateTotalRevenue = (orders) => {
                             ))}
                           </div>
                         </div>
-
-                        <div className="admin-page-order-total-badge">
-                          ₹{order.product_list.reduce((sum, item) => sum + item.total_price, 0).toLocaleString()}
-                        </div>
-
                         <button
-                          onClick={() => toggleOrderExpansion(order.id)}
-                          className="admin-page-expand-btn"
+                          onClick={() => handleOrderClick(order)}
+                          className="admin-page-order-details-btn"
                         >
-                          <ChevronDown 
-                            className={`admin-page-expand-icon ${expandedOrders.has(order.id) ? 'rotate-180' : ''}`} 
-                          />
+                          <Eye className="w-4 h-4" />
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOrderToDelete(order.id);
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="admin-page-order-delete-btn"
+                        >
+                          <Trash2 className="w-4 h-4" />  
+                          Delete
                         </button>
                       </div>
                     </div>
+                    <div className="admin-page-order-details">
+                      <div className="admin-page-order-info">
+                        <div className="admin-page-order-info-row">
+                          <span className="admin-page-order-info-label">Customer:</span>
+                          <span className="admin-page-order-info-value">{order.user_name}</span>
+                        </div>
+                        <div className="admin-page-order-info-row">
+                          <span className="admin-page-order-info-label">Email:</span>
+                          <span className="admin-page-order-info-value">{order.user_email}</span>
+                        </div>
+                        <div className="admin-page-order-info-row">
+                          <span className="admin-page-order-info-label">Phone:</span>
+                          <span className="admin-page-order-info-value">{order.user_phone}</span>
+                        </div>
+                        <div className="admin-page-order-info-row">
+                          <span className="admin-page-order-info-label">Address:</span>
+                          <span className="admin-page-order-info-value">
+                            {order.address_line}, {order.city}, {order.state} - {order.postal_code}
+                          </span>
+                        </div>
+                      </div>
 
-                    {/* Customer info row */}
-                    <div className="admin-page-customer-quick-info">
-                      <div className="admin-page-customer-info-item">
-                        <User className="w-4 h-4" />
-                        <span>{order.user_name}</span>
-                      </div>
-                      <div className="admin-page-customer-info-item">
-                        <Mail className="w-4 h-4" />
-                        <span>{order.user_email}</span>
-                      </div>
-                      <div className="admin-page-customer-info-item">
-                        <Phone className="w-4 h-4" />
-                        <span>{order.user_phone}</span>
-                      </div>
-                      <div className="admin-page-customer-info-item">
-                        <MapPin className="w-4 h-4" />
-                        <span>{order.city}, {order.state}</span>
-                      </div>
+                      {/* Product List */}
+                      {order.product_list && order.product_list.length > 0 && (
+                        <div className="admin-page-product-list">
+                          <h4 className="admin-page-product-list-title">Products</h4>
+                          <ul className="admin-page-product-list-items">
+                            {order.product_list.map((item, index) => (
+                              <li key={index} className="admin-page-product-list-item">
+                                <div className="admin-page-product-item-details">
+                                  <span className="admin-page-product-item-name">{item.name}</span>
+                                  <span className="admin-page-product-item-quantity">x{item.quantity}</span>
+                                  <span className="admin-page-product-item-price">₹{item.total_price.toFixed(2)}</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {/* Guest Identifier */}
+                      {order.guest_identifier && (
+                        <div className="admin-page-guest-identifier">
+                          <span className="admin-page-guest-label">Guest ID:</span>
+                          <span className="admin-page-guest-value">{order.guest_identifier}</span>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Expanded content */}
-                    {expandedOrders.has(order.id) && (
-                      <div className="admin-page-order-expanded">
-                        <div className="admin-page-expanded-grid">
-                          <div className="admin-page-expanded-section">
-                            <h4 className="admin-page-expanded-title">Shipping Address</h4>
-                            <p className="admin-page-expanded-content">
-                              {order.address_line}<br />
-                              {order.city}, {order.state} - {order.postal_code}
-                            </p>
-                          </div>
-                          
-                          <div className="admin-page-expanded-section">
-                            <h4 className="admin-page-expanded-title">Payment Details</h4>
-                            <div className="admin-page-expanded-content">
-                              <div className="admin-page-payment-info">
-                                <CreditCard className="w-4 h-4" />
-                                <span>ID: {order.payment_id || '—'}</span>
-                              </div>
-                              {!order.user_id && (
-                                <div className="admin-page-payment-info">
-                                  <Hash className="w-4 h-4" />
-                                  <span>Guest: {order.guest_identifier}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="admin-page-expanded-section admin-page-items-section-expanded">
-                            <h4 className="admin-page-expanded-title">Order Items</h4>
-                            <div className="admin-page-items-list-compact">
-                              {order.product_list.map((item, idx) => (
-                                <div key={idx} className="admin-page-item-row-compact">
-                                  <span className="admin-page-item-name-compact">{item.name}</span>
-                                  <span className="admin-page-item-qty-compact">×{item.quantity}</span>
-                                  <span className="admin-page-item-price-compact">₹{item.total_price}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="admin-page-expanded-actions">
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setEditingOrder({ ...order });
-                          setIsViewMode(false); // Edit mode
-                          setShowOrderDetails(true);
-                        }}
-                        className="admin-page-action-btn admin-page-action-btn-primary"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Edit Details
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setEditingOrder({ ...order });
-                          setIsViewMode(true); // View mode
-                          setShowOrderDetails(true);
-                        }}
-                        className="admin-page-action-btn admin-page-action-btn-secondary"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View Full Details
-                      </button>
-                          <button
-                            onClick={() => {
-                              setOrderToDelete(order.id);
-                              setShowDeleteConfirm(true);
-                            }}
-                            className="admin-page-action-btn admin-page-action-btn-danger"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -758,219 +881,142 @@ const calculateTotalRevenue = (orders) => {
           ))
         )}
       </div>
-
       {/* Order Details Modal */}
-      {showOrderDetails && selectedOrder && editingOrder && (
-        <div className="admin-page-modal-overlay">
-          <div className="admin-page-order-details-modal">
-            <div className="admin-page-modal-header">
-              <div className="admin-page-modal-header-content">
-                <h2 className="admin-page-modal-title">
-                  Order #{selectedOrder.id} {isViewMode ? 'Details' : 'Edit'}
-                </h2>
-                <div className="admin-page-modal-status-badges">
-                  <span className={`admin-page-payment-badge ${getPaymentStatusColor(selectedOrder.payment_status)}`}>
-                    {getStatusIcon(selectedOrder.payment_status)}
-                    <span className="admin-page-badge-text">{selectedOrder.payment_status}</span>
-                  </span>
-                  <span className={`admin-page-order-badge ${getOrderStatusColor(editingOrder.order_status)}`}>
-                    {getOrderStatusIcon(editingOrder.order_status)}
-                    {editingOrder.order_status}
-                  </span>
-                </div>
+      {showOrderDetails && selectedOrder && (
+        <div className="admin-page-order-details-modal">
+          <div className="admin-page-order-details-header">
+            <h2 className="admin-page-order-details-title">Order #{selectedOrder.id}</h2>
+            <button onClick={handleCloseDetails} className="admin-page-close-btn">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="admin-page-order-details-content">
+            <div className="admin-page-order-details-info">
+              <div className="admin-page-order-info-row">
+                <span className="admin-page-order-info-label">Customer:</span>
+                <span className="admin-page-order-info-value">{selectedOrder.user_name}</span>
               </div>
-              <button
-                onClick={handleCloseDetails}
-                className="admin-page-modal-close-btn"
-              >
-                <X className="admin-page-close-icon" />
-              </button>
+              <div className="admin-page-order-info-row">
+                <span className="admin-page-order-info-label">Email:</span>
+                <span className="admin-page-order-info-value">{selectedOrder.user_email}</span>
+              </div>
+              <div className="admin-page-order-info-row">
+                <span className="admin-page-order-info-label">Phone:</span>
+                <span className="admin-page-order-info-value">{selectedOrder.user_phone}</span>
+              </div>
+              <div className="admin-page-order-info-row">
+                <span className="admin-page-order-info-label">Address:</span>
+                <span className="admin-page-order-info-value">
+                  {selectedOrder.address_line}, {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.postal_code}
+                </span>
+              </div>
+              {selectedOrder.guest_identifier && (
+                <div className="admin-page-guest-identifier">
+                  <span className="admin-page-guest-label">Guest ID:</span>
+                  <span className="admin-page-guest-value">{selectedOrder.guest_identifier}</span>
+                </div>
+              )}
             </div>
 
-            <div className="admin-page-modal-body">
-              <div className="admin-page-details-grid">
-                <div className="admin-page-details-section">
-                  <h3 className="admin-page-section-title">Customer Information</h3>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">Name</label>
-                    <input
-                      type="text"
-                      value={editingOrder.user_name || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, user_name: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">Email</label>
-                    <input
-                      type="email"
-                      value={editingOrder.user_email || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, user_email: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">Phone</label>
-                    <input
-                      type="tel"
-                      value={editingOrder.user_phone || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, user_phone: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">Shipping Address</label>
-                    <input
-                      type="text"
-                      value={editingOrder.address_line || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, address_line: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">City</label>
-                    <input
-                      type="text"
-                      value={editingOrder.city || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, city: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">State</label>
-                    <input
-                      type="text"
-                      value={editingOrder.state || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, state: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  <div className="admin-page-form-group">
-                    <label className="admin-page-form-label">Postal Code</label>
-                    <input
-                      type="text"
-                      value={editingOrder.postal_code || ''}
-                      onChange={(e) => setEditingOrder({...editingOrder, postal_code: e.target.value})}
-                      className="admin-page-form-input"
-                      disabled={isViewMode}
-                    />
-                  </div>
-                </div>
-                <div className="admin-page-details-section">
-                  <h3 className="admin-page-section-title">Order Items</h3>
-                  <div className="admin-page-items-list">
-                    {editingOrder.product_list.map((item, idx) => (
-                      <div key={idx} className="admin-page-item-row">
-                        <span className="admin-page-item-name">{item.name}</span>
-                        <span className="admin-page-item-qty">×{item.quantity}</span>
-                        <span className="admin-page-item-price">₹{item.total_price}</span>
+            {/* Product List */}
+            {selectedOrder.product_list && selectedOrder.product_list.length > 0 && (
+              <div className="admin-page-product-list">
+                <h4 className="admin-page-product-list-title">Products</h4>
+                <ul className="admin-page-product-list-items">
+                  {selectedOrder.product_list.map((item, index) => (
+                    <li key={index} className="admin-page-product-list-item">
+                      <div className="admin-page-product-item-details">
+                        <span className="admin-page-product-item-name">{item.name}</span>
+                        <span className="admin-page-product-item-quantity">x{item.quantity}</span>
+                        <span className="admin-page-product-item-price">₹{item.total_price.toFixed(2)}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Payment Details */}
-                <div className="admin-page-details-section">
-                  <h3 className="admin-page-section-title">Payment Details</h3>
-                  <div className="admin-page-payment-info">
-                    <div className="admin-page-payment-item">
-                      <CreditCard className="w-4 h-4" />
-                      <span>ID: {editingOrder.payment_id || '—'}</span>
-                    </div>
-                    {!editingOrder.user_id && (
-                      <div className="admin-page-payment-item">
-                        <Hash className="w-4 h-4" />
-                        <span>Guest: {editingOrder.guest_identifier}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {/* Order Status */}
-                <div className="admin-page-details-section">
-                  <h3 className="admin-page-section-title">Order Status</h3>
-                  <div className="admin-page-status-select">
-                    {isViewMode ? (
-                      <div className={`admin-page-order-badge ${getOrderStatusColor(editingOrder.order_status)}`}>
-                        {getOrderStatusIcon(editingOrder.order_status)}
-                        {editingOrder.order_status}
-                      </div>
-                    ) : (
-                      <select
-                        value={editingOrder.order_status}
-                        onChange={(e) => setEditingOrder({...editingOrder, order_status: e.target.value})}
-                        className="admin-page-form-select"
-                      >
-                        <option value="PROCESSING">PROCESSING</option>
-                        <option value="SHIPPED">SHIPPED</option>
-                        <option value="COMPLETED">COMPLETED</option>
-                        <option value="CANCELLED">CANCELLED</option>
-                      </select>
-                    )}
-                  </div>
-                </div>
-                {/* Actions */}
-                <div className="admin-page-details-actions">
-                  {!isViewMode && (
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="admin-page-order-status-actions">
+              <div className="admin-page-status-dropdown">
+                <span className={`admin-page-payment-badge ${getPaymentStatusColor(selectedOrder.payment_status)}`}>
+                  {getStatusIcon(selectedOrder.payment_status)}
+                  <span className="admin-page-badge-text">{selectedOrder.payment_status}</span>
+                </span>
+                <div className="admin-page-status-dropdown-content">
+                  {getPaymentStatusActions(selectedOrder.payment_status).map(status => (
                     <button
-                      onClick={handleSaveOrderChanges}
-                      className="admin-page-action-btn admin-page-action-btn-primary"
-                      disabled={statusUpdateLoading.has(editingOrder.id)}
+                      key={status}
+                      onClick={() => updatePaymentStatus(selectedOrder.id, status)}
+                      disabled={paymentUpdateLoading.has(selectedOrder.id)}
+                      className="admin-page-status-dropdown-item"
                     >
-                      {statusUpdateLoading.has(editingOrder.id) ? 'Saving...' : 'Save Changes'}
+                      {getStatusIcon(status)}
+                      {paymentUpdateLoading.has(selectedOrder.id) ? 'Updating...' : status}
                     </button>
-                  )}
-                  {!isViewMode && (
-                    <button
-                      onClick={() => {
-                        setShowDeleteConfirm(true);
-                        setOrderToDelete(editingOrder.id);
-                      }}
-                      className="admin-page-action-btn admin-page-action-btn-danger"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete Order
-                    </button>
-                  )}
-                  {isViewMode && (
-                    <button
-                      onClick={() => setIsViewMode(false)}
-                      className="admin-page-action-btn admin-page-action-btn-primary"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      Switch to Edit Mode
-                    </button>
-                  )}
+                  ))}
                 </div>
               </div>
+
+              <div className="admin-page-status-dropdown">
+                <span className={`admin-page-order-badge ${getOrderStatusColor(selectedOrder.order_status)}`}>
+                  {getOrderStatusIcon(selectedOrder.order_status)}
+                  {selectedOrder.order_status}
+                </span>
+                <div className="admin-page-status-dropdown-content">
+                  {getOrderStatusActions(selectedOrder.order_status).map(status => (
+                    <button
+                      key={status}
+                      onClick={() => updateOrderStatus(selectedOrder.id, status)}
+                      disabled={statusUpdateLoading.has(selectedOrder.id)}
+                      className="admin-page-status-dropdown-item"
+                    >
+                      {getOrderStatusIcon(status)}
+                      {statusUpdateLoading.has(selectedOrder.id) ? 'Updating...' : status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveOrderChanges}
+                className="admin-page-save-changes-btn"
+                disabled={!editingOrder || statusUpdateLoading.has(editingOrder.id)}
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => {
+                  setEditingOrder(null);
+                  setSelectedOrder(null);
+                  setShowOrderDetails(false);
+                }}
+                className="admin-page-close-details-btn"
+                >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && orderToDelete && (
-        <div className="admin-page-modal-overlay">
-          <div className="admin-page-delete-confirm-modal">
-            <h2 className="admin-page-modal-title">Confirm Deletion</h2>
+        <div className="admin-page-delete-confirm-modal">
+          <div className="admin-page-delete-confirm-content">
+            <h3 className="admin-page-delete-confirm-title">Confirm Deletion</h3>
             <p className="admin-page-delete-confirm-text">
-              Are you sure you want to delete Order #{orderToDelete}? This action cannot be undone.
+              Are you sure you want to delete order #{orderToDelete}?
             </p>
             <div className="admin-page-delete-confirm-actions">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="admin-page-action-btn admin-page-action-btn-secondary"
+                onClick={() => handleDeleteOrder(orderToDelete)}
+                className="admin-page-delete-confirm-btn admin-page-delete-confirm-btn-danger"
               >
-                Cancel
+                Delete
               </button>
               <button
-                onClick={() => handleDeleteOrder(orderToDelete)}
-                className="admin-page-action-btn admin-page-action-btn-danger"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="admin-page-delete-confirm-btn"
               >
-                Delete Order
+                Cancel
               </button>
             </div>
           </div>
@@ -978,4 +1024,5 @@ const calculateTotalRevenue = (orders) => {
       )}
     </div>
   );
-}
+};
+
