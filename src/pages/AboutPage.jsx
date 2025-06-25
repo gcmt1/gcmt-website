@@ -232,3 +232,4 @@ Experience the power of Ayurveda. Trusted since 2012.              </p>
     </div>
   );
 }
+//test
