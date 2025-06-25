@@ -315,15 +315,7 @@ const ProductDetail = () => {
           {/* Product Gallery */}
           <section className="product-gallery">
             <div className="gallery-main">
-              <button 
-                className="gallery-nav prev"
-                onClick={() => handleImageNavigation('prev')}
-                aria-label="Previous image"
-                disabled={product.images.length <= 1}
-                style={{ opacity: product.images.length <= 1 ? 0.5 : 1 }}
-              >
-                <ArrowLeft size={20} />
-              </button>
+
               
               <div className="main-image-container">
                 <img 
