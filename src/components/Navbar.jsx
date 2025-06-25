@@ -193,7 +193,7 @@ export default function NavBar() {
             {adminRole && (
               <li>
                 <a
-                  href="/admin-landing"
+                  href="#/admin-landing"
                   className="gcmt-navbar__link admin-link"
                   onClick={closeMobileMenu}
                 >
