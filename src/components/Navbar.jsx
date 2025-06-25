@@ -16,44 +16,72 @@ export default function NavBar() {
   const [cartCount, setCartCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [adminRole, setAdminRole] = useState(false);
 
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
 
-  // Check if user is a guest account
   const isGuestAccount = (user) => {
-    if (!user) return true; // No user means guest
+    if (!user) return true;
     return user.email?.toLowerCase().includes('guest') || 
            user.user_metadata?.is_guest || 
            user.user_metadata?.account_type === 'guest' ||
            user.is_anonymous;
   };
 
-  // Fetch session + cart
   useEffect(() => {
     async function init() {
       const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user || null);
-      if (data.session?.user) fetchCartCount(data.session.user.id);
+      const currentUser = data.session?.user || null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchCartCount(currentUser.id);
+        checkIfAdmin(currentUser.id);
+      }
     }
+
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user || null);
-      if (session?.user) fetchCartCount(session.user.id);
-      else setCartCount(0);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchCartCount(currentUser.id);
+        checkIfAdmin(currentUser.id);
+      } else {
+        setCartCount(0);
+        setAdminRole(false);
+      }
     });
+
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Scroll listener
+  const checkIfAdmin = async (userId) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ Error checking admin role:', error);
+      return;
+    }
+
+    if (data?.role && data.role !== 'user') {
+      setAdminRole(true);
+    } else {
+      setAdminRole(false);
+    }
+  };
+
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Click outside to close search
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -70,7 +98,6 @@ export default function NavBar() {
     };
   }, [searchOpen]);
 
-  // Disable body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -122,7 +149,6 @@ export default function NavBar() {
     closeMobileMenu();
   }
 
-  // Add/remove class to navbar element when mobile menu opens/closes
   useEffect(() => {
     const navbar = document.querySelector('.gcmt-navbar');
     if (!navbar) return;
@@ -143,48 +169,56 @@ export default function NavBar() {
       `}
     >
       <div className="gcmt-navbar__container">
-        {/* Logo */}
         <div className="gcmt-navbar__logo">
           <a href="/">
             <img src={logo} alt="GCMT Herbal" />
           </a>
         </div>
 
-          <nav
-            className={`gcmt-navbar__menu ${
-              mobileMenuOpen ? 'gcmt-navbar__menu--open' : ''
-            }`}
-          >
-            <ul className="gcmt-navbar__links">
-          {['Home','Products','About','Blog','Contact','FAQ', 'Your Orders'].map(label => (
-            <li key={label}>
-              <a
-                href={`#/${label.toLowerCase().replace(/\s+/g, '-')}`}
-                className="gcmt-navbar__link"
-                onClick={closeMobileMenu}
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-              
-              <li className="gcmt-navbar__mobile-only">
-                {user && !isGuest ? (
-                  <button
-                    onClick={handleLogout}
-                    className="gcmt-navbar__logout-link"
-                  >
-                    Logout
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleAuthRedirect}
-                    className="gcmt-navbar__auth-link"
-                  >
-                    Login / Sign Up
-                  </button>
-                )}
+        <nav className={`gcmt-navbar__menu ${mobileMenuOpen ? 'gcmt-navbar__menu--open' : ''}`}>
+          <ul className="gcmt-navbar__links">
+            {['Home','Products','About','Blog','Contact','FAQ','Your Orders'].map(label => (
+              <li key={label}>
+                <a
+                  href={`#/${label.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="gcmt-navbar__link"
+                  onClick={closeMobileMenu}
+                >
+                  {label}
+                </a>
               </li>
+            ))}
+
+            {/* Admin Panel Link */}
+            {adminRole && (
+              <li>
+                <a
+                  href="/admin-landing"
+                  className="gcmt-navbar__link admin-link"
+                  onClick={closeMobileMenu}
+                >
+                  Admin Panel
+                </a>
+              </li>
+            )}
+
+            <li className="gcmt-navbar__mobile-only">
+              {user && !isGuest ? (
+                <button
+                  onClick={handleLogout}
+                  className="gcmt-navbar__logout-link"
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  onClick={handleAuthRedirect}
+                  className="gcmt-navbar__auth-link"
+                >
+                  Login / Sign Up
+                </button>
+              )}
+            </li>
           </ul>
 
           <button
@@ -198,7 +232,6 @@ export default function NavBar() {
 
         {/* Actions */}
         <div className="gcmt-navbar__actions">
-          {/* Search */}
           <div className="gcmt-navbar__search-container" ref={searchRef}>
             <button
               className="gcmt-navbar__action-btn"
@@ -223,7 +256,7 @@ export default function NavBar() {
             </div>
           </div>
 
-          {/* Profile / Auth Button */}
+          {/* Profile */}
           <div className="gcmt-navbar__profile-container">
             {user && !isGuest ? (
               <a
@@ -269,10 +302,6 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Mobile Search Panel */}
-
-
-      {/* Backdrop */}
       {mobileMenuOpen && (
         <div
           className={`gcmt-navbar__backdrop active`}

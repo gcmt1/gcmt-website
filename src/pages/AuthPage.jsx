@@ -37,6 +37,7 @@ function AuthPage() {
           id: userId,
           email: guestEmail,
           name: 'Guest User',
+          role: 'guest'
         });
 
         if (profileError) {
@@ -61,7 +62,7 @@ function AuthPage() {
       email,
       password,
       options: {
-        data: { name }, // optional metadata
+        data: { name },
       },
     });
 
@@ -70,13 +71,13 @@ function AuthPage() {
     } else {
       showToast('✅ Sign-up successful! Check your email to confirm.', 'success');
 
-      // Only insert into users table if user is available (confirmation email OFF)
       if (data.user) {
         const userId = data.user.id;
         const { error: profileError } = await supabase.from('users').insert({
           id: userId,
           email,
           name,
+          role: 'user' // default role
         });
 
         if (profileError) {
@@ -92,6 +93,7 @@ function AuthPage() {
 
   const handleLogin = async () => {
     setLoading(true);
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -103,25 +105,31 @@ function AuthPage() {
       showToast('✅ Logged in successfully!', 'success');
       await mergeGuestCart(data.session.user.id);
 
-      // 🟢 Check if user profile exists
-      const { data: existing, error: fetchError } = await supabase
+      const userId = data.session.user.id;
+
+      const { data: userProfile, error: profileError } = await supabase
         .from('users')
-        .select('id')
-        .eq('id', data.session.user.id)
+        .select('id, role')
+        .eq('id', userId)
         .maybeSingle();
 
-      if (!existing && !fetchError) {
-        const { error: insertError } = await supabase.from('users').insert({
-          id: data.session.user.id,
-          email,
-          name: name || '', // optional fallback
-        });
-        if (insertError) {
-          console.error('❌ Failed to insert user profile:', insertError);
-        }
+      if (profileError) {
+        console.error('❌ Failed to fetch user profile:', profileError);
       }
 
-      navigate('/');
+      if (!userProfile) {
+        await supabase.from('users').insert({
+          id: userId,
+          email,
+          name: name || '',
+          role: 'user'
+        });
+        navigate('/');
+      } else if (userProfile.role === 'admin') {
+        navigate('/admin-landing');
+      } else {
+        navigate('/');
+      }
     }
 
     setLoading(false);

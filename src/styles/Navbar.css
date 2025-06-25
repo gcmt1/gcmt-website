@@ -698,6 +698,11 @@
   animation: pulse 0.6s ease-in-out infinite;
 }
 
+.admin-link {
+  color: #d97706;
+  font-weight: bold;
+}
+
 /* =================================================================
    Dark Mode Support (Optional)
    ================================================================= */
