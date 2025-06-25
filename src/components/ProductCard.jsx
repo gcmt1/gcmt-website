@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import AddToCartButton from './AddToCartButton';
 import { Star, ShoppingCart, Eye, Heart } from 'lucide-react';
 import '../styles/ProductCard.css';
-import DefaultProductImage from '../assets/product.jpg';
+import DefaultProductImage from '../assets/product.png';
 
 export default function ProductCard({ productId }) {
   const [product, setProduct] = useState(null);

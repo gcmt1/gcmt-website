@@ -95,6 +95,19 @@ const ContactPage = () => {
               </div>
             </div>
           </div>
+
+          <div className="contact-map-container" style={{ marginTop: '2rem', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+            <iframe
+              title="GCMT Location"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d916.9431741744382!2d72.63798276954469!3d23.1784947315469!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395c2b04fbd7dd33%3A0xcf022e3710e23b2b!2sCHASE%20WORLDWIDE%20LLP!5e0!3m2!1sen!2sin!4v1750873411942!5m2!1sen!2sin"
+              width="100%"
+              height="220"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
         </div>
 
         <div className="contact-form-panel">
